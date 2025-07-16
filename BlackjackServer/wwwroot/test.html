@@ -9,6 +9,9 @@
         <input type="text" id="playerName" placeholder="Enter your name" />
         <button id="joinButton" onclick="joinGame()">Join Game</button>
 
+        <input type="number" id="betAmount" placeholder="Enter Bet Amount" />
+        <button id="betButton" onclick="placeBet()">Place Bet</button>
+
         <div id="gameArea" style="display:none;">
             <h3>Game Area</h3>
             <div id="gameStatus"></div>
@@ -49,6 +52,19 @@
                 log(`User disconnected: ${connectionId}`);
             });
 
+            connection.on("OnError", (error) => {
+                log(`Error: ${error}`);
+            });
+
+            connection.on("OnBetPlaced", (name, betAmount) => {
+                log(`Player ${name} Bet placed: ${betAmount}`);
+            });
+
+            connection.on("OnGameStateChanged", (state) => {
+                log(`Game state changed to: ${state}`);
+                // Update UI based on game state
+            });
+
             async function joinGame() {
                 const name = document.getElementById("playerName").value;
                 try {
@@ -57,6 +73,19 @@
                     await connection.invoke("JoinGame", name);
                 } catch (err) {
                     log(`Error: ${err.toString()}`);
+                }
+            }
+
+            async function placeBet() {
+                const betAmount = parseInt(document.getElementById("betAmount").value);
+                if (isNaN(betAmount) || betAmount <= 0) {
+                    log("Please enter a valid bet amount.");
+                    return;
+                }
+                try {
+                    await connection.invoke("PlaceBet", betAmount);
+                } catch (err) {
+                    log(`Error placing bet: ${err.toString()}`);
                 }
             }
 

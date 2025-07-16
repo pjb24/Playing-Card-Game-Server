@@ -2,6 +2,7 @@ public class Player
 {
     public string Name { get; set; }
     public string ConnectionId { get; set; }
+    public int BetAmount { get; set; } = 0;
 
     public Player(string name, string connectionId)
     {

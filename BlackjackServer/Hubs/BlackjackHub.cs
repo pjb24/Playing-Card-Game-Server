@@ -3,10 +3,12 @@ using Microsoft.AspNetCore.SignalR;
 public class BlackjackHub : Hub
 {
     private readonly PlayerManager _playerManager;
+    private readonly GameRoomManager _gameRoomManager;
 
-    public BlackjackHub(PlayerManager playerManager)
+    public BlackjackHub(PlayerManager playerManager, GameRoomManager gameRoomManager)
     {
         _playerManager = playerManager;
+        _gameRoomManager = gameRoomManager;
     }
 
     public override async Task OnConnectedAsync()
@@ -65,6 +67,24 @@ public class BlackjackHub : Hub
         var player = new Player(playerName, Context.ConnectionId);
         _playerManager.AddPlayer(player);
 
+        _gameRoomManager.CreateRoom("defaultRoom");
+        player = _playerManager.GetPlayer(Context.ConnectionId);
+        if (player == null)
+        {
+            await Clients.Caller.SendAsync("OnError", "플레이어를 찾을 수 없습니다.");
+            return;
+        }
+
+        _gameRoomManager.AddPlayerToRoom("defaultRoom", player);
+        await Groups.AddToGroupAsync(Context.ConnectionId, "defaultRoom");
+
+        var room = _gameRoomManager.GetRoomByPlayerConnectionId(Context.ConnectionId);
+        if (room != null)
+        {
+            room.UpdateGameState(GameState.Betting);
+            await Clients.Group(room.RoomId).SendAsync("OnGameStateChanged", room.State.ToString());
+        }
+
         await Clients.Caller.SendAsync("OnJoinSuccess", playerName);
         await Clients.Others.SendAsync("OnPlayerJoined", playerName);
 
@@ -78,5 +98,32 @@ public class BlackjackHub : Hub
     {
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, gameId);
         await Clients.Group(gameId).SendAsync("UserLeft", Context.ConnectionId);
+    }
+
+    public async Task PlaceBet(int amount)
+    {
+        var player = _playerManager.GetPlayer(Context.ConnectionId);
+        if (player == null)
+        {
+            await Clients.Caller.SendAsync("OnError", "플레이어를 찾을 수 없습니다.");
+            return;
+        }
+
+        var room = _gameRoomManager.GetRoomByPlayerConnectionId(Context.ConnectionId);
+        if (room == null)
+        {
+            await Clients.Caller.SendAsync("OnError", "게임 방을 찾을 수 없습니다.");
+            return;
+        }
+
+        bool success = room.PlaceBet(player, amount);
+        if (success)
+        {
+            await Clients.Group(room.RoomId).SendAsync("OnBetPlaced", player.Name, amount);
+        }
+        else
+        {
+            await Clients.Caller.SendAsync("OnError", "베팅에 실패했습니다. 충분한 금액이 있는지 확인하세요.");
+        }
     }
 }

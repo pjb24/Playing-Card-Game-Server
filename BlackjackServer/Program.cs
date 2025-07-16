@@ -2,6 +2,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddSignalR(); // SignalR 서비스 등록
 builder.Services.AddSingleton<PlayerManager>(); // PlayerManager 서비스 등록
+builder.Services.AddSingleton<GameRoomManager>(); // GameRoomManager 서비스 등록
 
 var app = builder.Build();
 
