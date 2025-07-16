@@ -1,9 +1,69 @@
 <!DOCTYPE html>
 <html>
     <head>
-
+        <title>Blackjack Test Client</title>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js" integrity="sha512-7SRCYIJtR6F8ocwW7UxW6wGKqbSyqREDbfCORCbGLatU0iugBLwyOXpzhkPyHIFdBO0K2VCu57fvP2Twgx1o2A==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     </head>
     <body>
-        test.html
+        <h2>Blackjack Test</h2>
+        <input type="text" id="playerName" placeholder="Enter your name" />
+        <button id="joinButton" onclick="joinGame()">Join Game</button>
+
+        <div id="gameArea" style="display:none;">
+            <h3>Game Area</h3>
+            <div id="gameStatus"></div>
+            <div id="playerCards"></div>
+            <div id="dealerCards"></div>
+            <button id="hitButton">Hit</button>
+            <button id="standButton">Stand</button>
+            <button id="doubleButton">Double Down</button>
+            <button id="surrenderButton">Surrender</button>
+            <button id="leaveButton">Leave Game</button>
+        </div>
+        
+        <script>
+            const connection = new signalR.HubConnectionBuilder()
+                .withUrl("/blackjackHub")
+                .configureLogging(signalR.LogLevel.Information)
+                .build();
+            
+            connection.on("OnJoinSuccess", (name) => {
+                log(`Joined as ${name}`);
+                document.getElementById("gameArea").style.display = "block";
+                document.getElementById("joinButton").style.display = "none";
+            });
+
+            connection.on("OnPlayerJoined", (name) => {
+                log(`${name} has joined the game.`);
+            });
+            
+            connection.on("Welcome", (message) => {
+                log(message);
+            });
+
+            connection.on("UserConnected", (connectionId) => {
+                log(`User connected: ${connectionId}`);
+            });
+
+            connection.on("UserDisconnected", (connectionId) => {
+                log(`User disconnected: ${connectionId}`);
+            });
+
+            async function joinGame() {
+                const name = document.getElementById("playerName").value;
+                try {
+                    await connection.start();
+                    log("Connected to server");
+                    await connection.invoke("JoinGame", name);
+                } catch (err) {
+                    log(`Error: ${err.toString()}`);
+                }
+            }
+
+            function log(message) {
+                const gameStatus = document.getElementById("gameStatus");
+                gameStatus.innerHTML += `<p>${message}</p>`;
+            }
+        </script>
     </body>
 </html>
