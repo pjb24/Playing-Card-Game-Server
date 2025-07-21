@@ -2,12 +2,14 @@ using Microsoft.AspNetCore.SignalR;
 
 public class BlackjackHub : Hub
 {
-    private readonly PlayerManager _playerManager;
+    private readonly IHubContext<BlackjackHub> _hubContext;
+    private readonly UserManager _userManager;
     private readonly GameRoomManager _gameRoomManager;
 
-    public BlackjackHub(PlayerManager playerManager, GameRoomManager gameRoomManager)
+    public BlackjackHub(IHubContext<BlackjackHub> hubContext, UserManager userManager, GameRoomManager gameRoomManager)
     {
-        _playerManager = playerManager;
+        _hubContext = hubContext;
+        _userManager = userManager;
         _gameRoomManager = gameRoomManager;
     }
 
@@ -51,24 +53,27 @@ public class BlackjackHub : Hub
         // 예를 들어, 게임 상태를 업데이트하거나 사용자 목록에서 제거할 수 있습니다.
         // 또한, 연결이 끊어진 후에도 허브가 여전히 활성 상태를 유지하도록 보장합니다.
 
-        _playerManager.RemovePlayer(Context.ConnectionId); // 연결이 끊어진 사용자를 제거합니다.
+        _userManager.RemoveUser(Context.ConnectionId); // 연결이 끊어진 사용자를 제거합니다.
 
         // 기본 클래스의 OnDisconnectedAsync 메서드를 호출하여 SignalR이 연결 수명 주기를 올바르게 관리하도록 합니다.
         await base.OnDisconnectedAsync(exception);
     }
 
-    public async Task SendMessage(string user, string message)
+    public async Task JoinGame(string userName)
     {
-        await Clients.All.SendAsync("ReceiveMessage", user, message);
-    }
+        var user = new User(userName, Context.ConnectionId, userName);
+        _userManager.AddUser(user);
 
-    public async Task JoinGame(string playerName)
-    {
-        var player = new Player(playerName, Context.ConnectionId);
-        _playerManager.AddPlayer(player);
+        _gameRoomManager.CreateRoom("defaultRoom", _hubContext, _userManager);
 
-        _gameRoomManager.CreateRoom("defaultRoom");
-        player = _playerManager.GetPlayer(Context.ConnectionId);
+        user = _userManager.GetUserByConnectionId(Context.ConnectionId);
+        if (user == null)
+        {
+            await Clients.Caller.SendAsync("OnError", "플레이어를 찾을 수 없습니다.");
+            return;
+        }
+
+        var player = _userManager.GetPlayer(user.Id);
         if (player == null)
         {
             await Clients.Caller.SendAsync("OnError", "플레이어를 찾을 수 없습니다.");
@@ -78,52 +83,261 @@ public class BlackjackHub : Hub
         _gameRoomManager.AddPlayerToRoom("defaultRoom", player);
         await Groups.AddToGroupAsync(Context.ConnectionId, "defaultRoom");
 
-        var room = _gameRoomManager.GetRoomByPlayerConnectionId(Context.ConnectionId);
-        if (room != null)
+        await Clients.Caller.SendAsync("OnJoinSuccess", userName);
+        await Clients.Others.SendAsync("OnUserJoined", userName);
+
+        Console.WriteLine($"{userName} joined with connection ID: {Context.ConnectionId}");
+    }
+
+    public async Task StartGame()
+    {
+        var user = _userManager.GetUserByConnectionId(Context.ConnectionId);
+        if (user == null)
         {
-            room.UpdateGameState(GameState.Betting);
-            await Clients.Group(room.RoomId).SendAsync("OnGameStateChanged", room.State.ToString());
+            await Clients.Caller.SendAsync("OnError", "플레이어를 찾을 수 없습니다.");
+            return;
         }
 
-        await Clients.Caller.SendAsync("OnJoinSuccess", playerName);
-        await Clients.Others.SendAsync("OnPlayerJoined", playerName);
-
-        Console.WriteLine($"{playerName} joined with connection ID: {Context.ConnectionId}");
-
-        // await Groups.AddToGroupAsync(Context.ConnectionId, gameId);
-        // await Clients.Group(gameId).SendAsync("UserJoined", Context.ConnectionId);
-    }
-
-    public async Task LeaveGame(string gameId)
-    {
-        await Groups.RemoveFromGroupAsync(Context.ConnectionId, gameId);
-        await Clients.Group(gameId).SendAsync("UserLeft", Context.ConnectionId);
-    }
-
-    public async Task PlaceBet(int amount)
-    {
-        var player = _playerManager.GetPlayer(Context.ConnectionId);
+        var player = _userManager.GetPlayer(user.Id);
         if (player == null)
         {
             await Clients.Caller.SendAsync("OnError", "플레이어를 찾을 수 없습니다.");
             return;
         }
 
-        var room = _gameRoomManager.GetRoomByPlayerConnectionId(Context.ConnectionId);
+        var room = _gameRoomManager.GetRoomByPlayerId(player.Id);
         if (room == null)
         {
             await Clients.Caller.SendAsync("OnError", "게임 방을 찾을 수 없습니다.");
             return;
         }
 
-        bool success = room.PlaceBet(player, amount);
+        room.StartGame();
+        await Clients.Group(room.RoomId).SendAsync("OnGameStateChanged", room.CurrentState);
+    }
+
+    public async Task PlaceBet(int amount, string currentHandGuid)
+    {
+        var user = _userManager.GetUserByConnectionId(Context.ConnectionId);
+        if (user == null)
+        {
+            Console.WriteLine("플레이어를 찾을 수 없습니다.");
+            await Clients.Caller.SendAsync("OnError", "플레이어를 찾을 수 없습니다.");
+            return;
+        }
+
+        var player = _userManager.GetPlayer(user.Id);
+        if (player == null)
+        {
+            Console.WriteLine("플레이어를 찾을 수 없습니다.");
+            await Clients.Caller.SendAsync("OnError", "플레이어를 찾을 수 없습니다.");
+            return;
+        }
+
+        var room = _gameRoomManager.GetRoomByPlayerId(player.Id);
+        if (room == null)
+        {
+            Console.WriteLine("게임 방을 찾을 수 없습니다.");
+            await Clients.Caller.SendAsync("OnError", "게임 방을 찾을 수 없습니다.");
+            return;
+        }
+
+        var guid = Guid.TryParse(currentHandGuid, out var parsedGuid) ? parsedGuid : Guid.Empty;
+        if (guid == Guid.Empty)
+        {
+            Console.WriteLine("유효하지 않은 핸드 ID입니다.");
+            await Clients.Caller.SendAsync("OnError", "유효하지 않은 핸드 ID입니다.");
+            return;
+        }
+
+        var currentHand = player.GetHandById(guid);
+        if (currentHand == null)
+        {
+            Console.WriteLine("해당 핸드를 찾을 수 없습니다.");
+            await Clients.Caller.SendAsync("OnError", "해당 핸드를 찾을 수 없습니다.");
+            return;
+        }
+
+        bool success = room.PlaceBet(player, amount, currentHand);
         if (success)
         {
-            await Clients.Group(room.RoomId).SendAsync("OnBetPlaced", player.Name, amount);
+            await Clients.Group(room.RoomId).SendAsync("OnBetPlaced", new
+            {
+                playerName = player.DisplayName,
+                betAmount = amount,
+                handId = currentHand.HandId.ToString()
+            });
         }
         else
         {
+            Console.WriteLine("베팅에 실패했습니다. 충분한 금액이 있는지 확인하세요.");
             await Clients.Caller.SendAsync("OnError", "베팅에 실패했습니다. 충분한 금액이 있는지 확인하세요.");
         }
+    }
+
+    public async Task Hit(string handGuid)
+    {
+        var user = _userManager.GetUserByConnectionId(Context.ConnectionId);
+        if (user == null)
+        {
+            await Clients.Caller.SendAsync("OnError", "플레이어를 찾을 수 없습니다.");
+            return;
+        }
+
+        var player = _userManager.GetPlayer(user.Id);
+        if (player == null)
+        {
+            await Clients.Caller.SendAsync("OnError", "플레이어를 찾을 수 없습니다.");
+            return;
+        }
+
+        var room = _gameRoomManager.GetRoomByPlayerId(player.Id);
+        if (room == null)
+        {
+            await Clients.Caller.SendAsync("OnError", "게임 방을 찾을 수 없습니다.");
+            return;
+        }
+
+        var guid = Guid.TryParse(handGuid, out var parsedGuid) ? parsedGuid : Guid.Empty;
+        if (guid == Guid.Empty)
+        {
+            await Clients.Caller.SendAsync("OnError", "유효하지 않은 핸드 ID입니다.");
+            return;
+        }
+
+        var hand = player.GetHandById(guid);
+        if (hand == null)
+        {
+            await Clients.Caller.SendAsync("OnError", "해당 핸드를 찾을 수 없습니다.");
+            return;
+        }
+
+        room.Hit(player, hand);
+    }
+
+    public async Task Stand(string handGuid)
+    {
+        var user = _userManager.GetUserByConnectionId(Context.ConnectionId);
+        if (user == null)
+        {
+            await Clients.Caller.SendAsync("OnError", "플레이어를 찾을 수 없습니다.");
+            return;
+        }
+
+        var player = _userManager.GetPlayer(user.Id);
+        if (player == null)
+        {
+            await Clients.Caller.SendAsync("OnError", "플레이어를 찾을 수 없습니다.");
+            return;
+        }
+
+        var room = _gameRoomManager.GetRoomByPlayerId(player.Id);
+        if (room == null)
+        {
+            await Clients.Caller.SendAsync("OnError", "게임 방을 찾을 수 없습니다.");
+            return;
+        }
+
+        var guid = Guid.TryParse(handGuid, out var parsedGuid) ? parsedGuid : Guid.Empty;
+        if (guid == Guid.Empty)
+        {
+            await Clients.Caller.SendAsync("OnError", "유효하지 않은 핸드 ID입니다.");
+            return;
+        }
+
+        var hand = player.GetHandById(guid);
+        if (hand == null)
+        {
+            await Clients.Caller.SendAsync("OnError", "해당 핸드를 찾을 수 없습니다.");
+            return;
+        }
+
+        room.Stand(player, hand);
+    }
+
+    public async Task Split(string handGuid)
+    {
+        var user = _userManager.GetUserByConnectionId(Context.ConnectionId);
+        if (user == null)
+        {
+            await Clients.Caller.SendAsync("OnError", "플레이어를 찾을 수 없습니다.");
+            return;
+        }
+
+        var player = _userManager.GetPlayer(user.Id);
+        if (player == null)
+        {
+            await Clients.Caller.SendAsync("OnError", "플레이어를 찾을 수 없습니다.");
+            return;
+        }
+
+        var room = _gameRoomManager.GetRoomByPlayerId(player.Id);
+        if (room == null)
+        {
+            await Clients.Caller.SendAsync("OnError", "게임 방을 찾을 수 없습니다.");
+            return;
+        }
+
+        var guid = Guid.TryParse(handGuid, out var parsedGuid) ? parsedGuid : Guid.Empty;
+        if (guid == Guid.Empty)
+        {
+            await Clients.Caller.SendAsync("OnError", "유효하지 않은 핸드 ID입니다.");
+            return;
+        }
+
+        var hand = player.GetHandById(guid);
+        if (hand == null)
+        {
+            await Clients.Caller.SendAsync("OnError", "해당 핸드를 찾을 수 없습니다.");
+            return;
+        }
+
+        room.Split(player, hand);
+    }
+
+    public async Task DoubleDown(string handGuid)
+    {
+        var user = _userManager.GetUserByConnectionId(Context.ConnectionId);
+        if (user == null)
+        {
+            await Clients.Caller.SendAsync("OnError", "플레이어를 찾을 수 없습니다.");
+            return;
+        }
+
+        var player = _userManager.GetPlayer(user.Id);
+        if (player == null)
+        {
+            await Clients.Caller.SendAsync("OnError", "플레이어를 찾을 수 없습니다.");
+            return;
+        }
+
+        var room = _gameRoomManager.GetRoomByPlayerId(player.Id);
+        if (room == null)
+        {
+            await Clients.Caller.SendAsync("OnError", "게임 방을 찾을 수 없습니다.");
+            return;
+        }
+
+        var guid = Guid.TryParse(handGuid, out var parsedGuid) ? parsedGuid : Guid.Empty;
+        if (guid == Guid.Empty)
+        {
+            await Clients.Caller.SendAsync("OnError", "유효하지 않은 핸드 ID입니다.");
+            return;
+        }
+
+        var hand = player.GetHandById(guid);
+        if (hand == null)
+        {
+            await Clients.Caller.SendAsync("OnError", "해당 핸드를 찾을 수 없습니다.");
+            return;
+        }
+
+        room.DoubleDown(player, hand);
+    }
+
+    public async Task LeaveGame(string gameId)
+    {
+        await Groups.RemoveFromGroupAsync(Context.ConnectionId, gameId);
+        await Clients.Group(gameId).SendAsync("UserLeft", Context.ConnectionId);
     }
 }

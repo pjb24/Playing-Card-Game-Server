@@ -6,73 +6,138 @@
     </head>
     <body>
         <h2>Blackjack Test</h2>
-        <input type="text" id="playerName" placeholder="Enter your name" />
+        <input type="text" id="userName" placeholder="Enter your name" />
         <button id="joinButton" onclick="joinGame()">Join Game</button>
+
+        <button id="startGameButton" onclick="startGame()">Start Game </button>
 
         <input type="number" id="betAmount" placeholder="Enter Bet Amount" />
         <button id="betButton" onclick="placeBet()">Place Bet</button>
+
+        <button id="leaveButton" onclick="leaveGame()">Leave Game</button>
+
 
         <div id="gameArea" style="display:none;">
             <h3>Game Area</h3>
             <div id="gameStatus"></div>
             <div id="playerCards"></div>
             <div id="dealerCards"></div>
-            <button id="hitButton">Hit</button>
-            <button id="standButton">Stand</button>
-            <button id="doubleButton">Double Down</button>
-            <button id="surrenderButton">Surrender</button>
+            <button id="hitButton" onclick="hit()">Hit</button>
+            <button id="standButton" onclick="stand()">Stand</button>
+            <button id="splitButton" onclick="split()">Split</button>
+            <button id="doubleButton" onclick="doubleDown()">Double Down</button>
             <button id="leaveButton">Leave Game</button>
         </div>
         
+
         <script>
             const connection = new signalR.HubConnectionBuilder()
                 .withUrl("/blackjackHub")
                 .configureLogging(signalR.LogLevel.Information)
                 .build();
             
+            let currentHandId = null;
+
+            // Connection event handlers
+            connection.on("Welcome", (message) => {
+                log(message);
+            });
+            connection.on("UserConnected", (connectionId) => {
+                log(`User connected: ${connectionId}`);
+            });
+            connection.on("UserDisconnected", (connectionId) => {
+                log(`User disconnected: ${connectionId}`);
+            });
+            connection.on("OnError", (error) => {
+                log(`Error: ${error}`);
+            });
+
+
+            // Player Join/Leave
             connection.on("OnJoinSuccess", (name) => {
                 log(`Joined as ${name}`);
                 document.getElementById("gameArea").style.display = "block";
                 document.getElementById("joinButton").style.display = "none";
             });
-
-            connection.on("OnPlayerJoined", (name) => {
+            connection.on("OnUserJoined", (name) => {
                 log(`${name} has joined the game.`);
             });
-            
-            connection.on("Welcome", (message) => {
-                log(message);
+            connection.on("OnUserLeft", (name) => {
+                log(`${name} has left the game.`);
             });
 
-            connection.on("UserConnected", (connectionId) => {
-                log(`User connected: ${connectionId}`);
-            });
-
-            connection.on("UserDisconnected", (connectionId) => {
-                log(`User disconnected: ${connectionId}`);
-            });
-
-            connection.on("OnError", (error) => {
-                log(`Error: ${error}`);
-            });
-
-            connection.on("OnBetPlaced", (name, betAmount) => {
-                log(`Player ${name} Bet placed: ${betAmount}`);
-            });
 
             connection.on("OnGameStateChanged", (state) => {
                 log(`Game state changed to: ${state}`);
                 // Update UI based on game state
             });
 
+
+            // Betting State
+            connection.on("OnTimeToBetting", (args) => {
+                log(`Hand: ${args.handId} needs to place a bet.`);
+                currentHandId = args.handId;
+            });
+            connection.on("OnBetPlaced", (args) => {
+                log(`Player ${args.playerName}, Hand: ${args.handId} Bet placed: ${args.betAmount}`);
+            });
+
+
+            // Dealing State
+            connection.on("OnCardDealt", (args) => {
+                log(`Card dealt to PlayerGuid: ${args.playerGuid}, PlayerName: ${args.playerName}: ${args.cardString}. Hand: ${args.handId}`);
+            });
+            connection.on("OnDealerCardDealt", (args) => {
+                log(`Dealer card dealt: ${args.cardString}`);
+            });
+            connection.on("OnDealerHiddenCardDealt", (args) => {
+                log("Dealer's hidden card dealt.");
+            });
+            
+
+            // PlayerTurn State
+            connection.on("OnTimeToAction", (args) => {
+                log(`Hand: ${args.handId}. Choose an action.`);
+            });
+            connection.on("OnPlayerBusted", (args) => {
+                log(`PlayerGuid: ${args.playerGuid}, PlayerName: ${args.playerName} has busted with hand: ${args.handId}.`);
+            });
+            connection.on("OnActionDone", (args) => {
+                log(`PlayerGuid: ${args.playerGuid}, PlayerName: ${args.playerName} has completed their action with hand: ${args.handId}.`);
+            });
+
+
+            // DealerTurn State
+            connection.on("OnDealerHoleCardRevealed", (args) => {
+                log(`Dealer's hole card revealed: ${args.card}`);
+            });
+
+
+            // Result State
+            connection.on("OnHandEvaluation", (args) => {
+                log(`Hand evaluation for PlayerGuid: ${args.playerGuid}, PlayerName: ${args.playerName}: HandId: ${args.handId}. Result: ${args.evaluationResult}`);
+            });
+            connection.on("OnPayout", (args) => {
+                log(`Payout for Hand: ${args.handId}, Result: ${args.evaluationResult}`);
+            });
+
+
             async function joinGame() {
-                const name = document.getElementById("playerName").value;
+                const name = document.getElementById("userName").value;
                 try {
                     await connection.start();
                     log("Connected to server");
                     await connection.invoke("JoinGame", name);
                 } catch (err) {
-                    log(`Error: ${err.toString()}`);
+                    log(`Error join game: ${err.toString()}`);
+                }
+            }
+
+            async function startGame() {
+                try {
+                    await connection.invoke("StartGame");
+                } catch (err) {
+                    log(`Error start game: ${err.toString()}`);
                 }
             }
 
@@ -83,9 +148,49 @@
                     return;
                 }
                 try {
-                    await connection.invoke("PlaceBet", betAmount);
+                    await connection.invoke("PlaceBet", betAmount, currentHandId);
                 } catch (err) {
-                    log(`Error placing bet: ${err.toString()}`);
+                    log(`Error place bet: ${err.toString()}`);
+                }
+            }
+
+            async function leaveGame() {
+                try {
+                    await connectin.invoke("LeaveGame");
+                } catch (err) {
+                    log(`Error leave game: ${err.toString()}`);
+                }
+            }
+
+            async function hit() {
+                try {
+                    await connection.invoke("Hit", currentHandId);
+                } catch (err) {
+                    log(`Error hit: ${err.toString()}`);
+                }
+            }
+
+            async function stand() {
+                try {
+                    await connection.invoke("Stand", currentHandId);
+                } catch (err) {
+                    log(`Error stand: ${err.toString()}`);
+                }
+            }
+
+            async function split() {
+                try {
+                    await connection.invoke("Split", currentHandId);
+                } catch (err) {
+                    log(`Error split: ${err.toString()}`);
+                }
+            }
+
+            async function doubleDown() {
+                try {
+                    await connection.invoke("DoubleDown", currentHandId);
+                } catch (err) {
+                    log(`Error double down: ${err.toString()}`);
                 }
             }
 
