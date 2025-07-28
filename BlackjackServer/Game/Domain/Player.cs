@@ -64,6 +64,12 @@ public class Player
         _isAllHandActionDone = true;
     }
 
+    public void SetAllHandDoneReset()
+    {
+        _isAllHandBettingDone = false;
+        _isAllHandActionDone = false;
+    }
+
     public bool PlaceBet(int amount, PlayerHand hand)
     {
         if (Chips < amount)

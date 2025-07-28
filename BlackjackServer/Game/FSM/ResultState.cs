@@ -60,6 +60,8 @@ public class ResultState : IGameState
                     handId = hand.HandId,
                     evaluationResult = result.ToString()
                 });
+
+                _ = _gameRoom.SendToPlayer(player, "OnPlayerRemainChips", player.Chips.ToString());
             }
         }
     }

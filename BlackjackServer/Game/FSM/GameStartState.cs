@@ -25,7 +25,10 @@ public class GameStartState : IGameState
 
         foreach (var player in _gameRoom.PlayersInGame)
         {
-            player.AddHand(new PlayerHand());
+            if (player.Hands.Count == 0)
+            {
+                player.AddHand(new PlayerHand());
+            }
         }
 
         _gameRoom.ChangeState(new BettingState(_gameRoom));

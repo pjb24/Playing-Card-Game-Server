@@ -11,6 +11,12 @@ public class GameEndState : IGameState
     {
         // 게임 종료 상태로 전환될 때 호출됩니다.
         // 필요한 초기화 작업을 수행할 수 있습니다.
+
+        foreach (var player in _gameRoom.PlayersInGame)
+        {
+            player.ClearHand();
+            player.SetAllHandDoneReset();
+        }
     }
 
     public void Exit()

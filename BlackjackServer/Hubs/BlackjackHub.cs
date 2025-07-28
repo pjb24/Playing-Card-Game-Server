@@ -86,6 +86,8 @@ public class BlackjackHub : Hub
         await Clients.Caller.SendAsync("OnJoinSuccess", userName, player.Guid.ToString());
         await Clients.Others.SendAsync("OnUserJoined", userName);
 
+        await Clients.Caller.SendAsync("OnPlayerRemainChips", player.Chips.ToString());
+
         Console.WriteLine($"{userName} joined with connection ID: {Context.ConnectionId}");
     }
 
@@ -167,6 +169,8 @@ public class BlackjackHub : Hub
                 betAmount = amount,
                 handId = currentHand.HandId.ToString()
             });
+            
+            await Clients.Caller.SendAsync("OnPlayerRemainChips", player.Chips.ToString());
         }
         else
         {

@@ -16,6 +16,7 @@
 
         <button id="leaveButton" onclick="leaveGame()">Leave Game</button>
 
+        
 
         <div id="gameArea" style="display:none;">
             <h3>Game Area</h3>
@@ -27,6 +28,7 @@
             <button id="splitButton" onclick="split()">Split</button>
             <button id="doubleButton" onclick="doubleDown()">Double Down</button>
             <button id="leaveButton">Leave Game</button>
+            <div id="chips"></div>
         </div>
         
 
@@ -74,6 +76,11 @@
                 log(`${name} has left the game.`);
             });
 
+            // Player Remain Chips
+            connection.on("OnPlayerRemainChips", (chips) => {
+                const playerChips = document.getElementById("chips");
+                playerChips.innerHTML = `<p>RemainChips: ${chips}</p>`;
+            });
 
             connection.on("OnGameStateChanged", (state) => {
                 log(`Game state changed to: ${state}`);
