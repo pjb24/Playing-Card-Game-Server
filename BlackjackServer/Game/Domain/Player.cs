@@ -34,6 +34,18 @@ public class Player
         }
     }
 
+    public PlayerHand InsertHand(int index)
+    {
+        var hand = new PlayerHand();
+        _hands.Insert(index, hand);
+        return hand;
+    }
+
+    public int IndexOfHand(PlayerHand hand)
+    {
+        return _hands.IndexOf(hand);
+    }
+
     public PlayerHand? GetHandById(Guid handId)
     {
         return _hands.FirstOrDefault(hand => hand.HandId == handId);

@@ -221,6 +221,39 @@ public class GameRoom
             return false;
         }
 
+        if (player.Chips < hand.BetAmount)
+        {
+            return false;
+        }
+
+        // 새로운 핸드를 현재 핸드의 다음 index로 insert
+        var index = player.IndexOfHand(hand);
+        PlayerHand newHand = player.InsertHand(index + 1);
+        _ = SendToAll("OnHandSplit", new
+        {
+            playerName = player.DisplayName,
+            handId = hand.HandId.ToString(),
+            newHandId = newHand.HandId.ToString()
+        });
+
+        // 새로운 핸드에 베팅 입력
+        player.PlaceBet(hand.BetAmount, newHand);
+        _ = SendToAll("OnBetPlaced", new
+        {
+            playerName = player.DisplayName,
+            betAmount = hand.BetAmount,
+            handId = newHand.HandId.ToString()
+        });
+
+        // 현재 핸드의 2번째 카드를 새로운 핸드로 나눔
+        var Cards = hand.GetCards();
+        var splitCard = Cards.ElementAt(1);
+        hand.RemoveCard(splitCard);
+        newHand.AddCard(splitCard);
+
+        // PlayerTurnState 다시 진입
+        ChangeState(new PlayerTurnState(this));
+
         return true;
     }
 
@@ -240,8 +273,19 @@ public class GameRoom
             return false;
         }
 
+        if (player.Chips < hand.BetAmount)
+        {
+            return false;
+        }
+
         // Increase bet
         player.DoubleDown(hand);
+        _ = SendToAll("OnBetPlaced", new
+        {
+            playerName = player.DisplayName,
+            betAmount = hand.BetAmount,
+            handId = hand.HandId.ToString()
+        });
 
         // Draw card
         var card = _deck.DrawCard();

@@ -138,7 +138,9 @@
             connection.on("OnActionDone", (args) => {
                 log(`PlayerGuid: ${args.playerGuid}, PlayerName: ${args.playerName} has completed their action with hand: ${args.handId}.`);
             });
-
+            connectin.on("OnHandSplit", (args) => {
+                log(`PlayerName: ${args.playerName}, Split From Hand: ${args.handId}, To Hand: ${args.newHandId}`);
+            });
 
             // DealerTurn State
             connection.on("OnDealerHoleCardRevealed", (args) => {
