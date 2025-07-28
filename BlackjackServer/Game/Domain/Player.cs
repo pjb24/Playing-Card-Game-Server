@@ -83,6 +83,19 @@ public class Player
         return true;
     }
 
+    public bool DoubleDown(PlayerHand hand)
+    {
+        if (Chips < hand.BetAmount)
+        {
+            return false; // Not enough chips to place bet
+        }
+
+        _chips -= hand.BetAmount;
+        hand.PlaceBet(hand.BetAmount * 2);
+
+        return true;
+    }
+
     public void Win(PlayerHand hand)
     {
         int payout = hand.BetAmount * 2;

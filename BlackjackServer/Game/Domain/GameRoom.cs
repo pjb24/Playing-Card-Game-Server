@@ -200,7 +200,6 @@ public class GameRoom
             handId = hand.HandId.ToString()
         });
 
-
         ChangeState(new PlayerTurnState(this));
 
         return true;
@@ -240,6 +239,40 @@ public class GameRoom
         {
             return false;
         }
+
+        // Increase bet
+        player.DoubleDown(hand);
+
+        // Draw card
+        var card = _deck.DrawCard();
+        hand.AddCard(card);
+        _ = SendToAll("OnCardDealt", new
+        {
+            playerGuid = player.Guid.ToString(),
+            playerName = player.DisplayName,
+            cardString = card.ToString(),
+            handId = hand.HandId.ToString()
+        });
+
+        // Check bust
+        if (hand.IsBust())
+        {
+            _ = SendToAll("OnPlayerBusted", new
+            {
+                playerGuid = player.Guid.ToString(),
+                playerName = player.DisplayName,
+                handId = hand.HandId.ToString()
+            });
+        }
+
+        // Stand hand
+        hand.SetActionDone();
+        _ = SendToAll("OnActionDone", new
+        {
+            playerGuid = player.Guid.ToString(),
+            playerName = player.DisplayName,
+            handId = hand.HandId.ToString()
+        });
 
         return true;
     }
