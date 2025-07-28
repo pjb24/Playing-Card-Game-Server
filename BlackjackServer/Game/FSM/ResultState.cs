@@ -50,7 +50,7 @@ public class ResultState : IGameState
                     playerGuid = player.Guid.ToString(),
                     playerName = player.DisplayName,
                     handId = hand.HandId.ToString(),
-                    evaluationResult = result
+                    evaluationResult = result.ToString()
                 });
 
                 ApplyPayout(player, hand, result);
@@ -58,7 +58,7 @@ public class ResultState : IGameState
                 _ = _gameRoom.SendToPlayer(player, "OnPayout", new
                 {
                     handId = hand.HandId,
-                    evaluationResult = result
+                    evaluationResult = result.ToString()
                 });
             }
         }

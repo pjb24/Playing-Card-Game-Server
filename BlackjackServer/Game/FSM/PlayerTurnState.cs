@@ -47,9 +47,11 @@ public class PlayerTurnState : IGameState
             });
         }
 
-        _ = _gameRoom.SendToPlayer(_currentPlayer, "OnTimeToAction", new
+        _ = _gameRoom.SendToAll("OnTimeToAction", new
         {
-            handId = _currentHand.HandId.ToString()
+            handId = _currentHand.HandId.ToString(),
+            playerGuid = _currentPlayer.Guid.ToString(),
+            playerName = _currentPlayer.DisplayName
         });
     }
 

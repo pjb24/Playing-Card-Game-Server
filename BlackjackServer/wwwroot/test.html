@@ -37,6 +37,7 @@
                 .build();
             
             let currentHandId = null;
+            let playerGuid = null;
 
             // Connection event handlers
             connection.on("Welcome", (message) => {
@@ -54,10 +55,17 @@
 
 
             // Player Join/Leave
-            connection.on("OnJoinSuccess", (name) => {
-                log(`Joined as ${name}`);
+            connection.on("OnJoinSuccess", (name, guid) => {
+                log(`Joined as Name: ${name}, Guid: ${guid}`);
                 document.getElementById("gameArea").style.display = "block";
                 document.getElementById("joinButton").style.display = "none";
+
+                playerGuid = guid;
+
+                document.getElementById("hitButton").disabled = true;
+                document.getElementById("standButton").disabled = true;
+                document.getElementById("splitButton").disabled = true;
+                document.getElementById("doubleButton").disabled = true;
             });
             connection.on("OnUserJoined", (name) => {
                 log(`${name} has joined the game.`);
@@ -97,7 +105,25 @@
 
             // PlayerTurn State
             connection.on("OnTimeToAction", (args) => {
-                log(`Hand: ${args.handId}. Choose an action.`);
+                log(`PlayerGuid: ${args.playerGuid}, PlayerName: ${args.playerName}, Hand: ${args.handId}. Choose an action.`);
+                
+                if (playerGuid !== args.playerGuid) {
+                    log(`It's not your turn! Waiting for PlayerGuid: ${args.playerGuid}, PlayerName: ${args.playerName}.`);
+
+                    document.getElementById("hitButton").disabled = true;
+                    document.getElementById("standButton").disabled = true;
+                    document.getElementById("splitButton").disabled = true;
+                    document.getElementById("doubleButton").disabled = true;
+
+                    return;
+                }
+
+                currentHandId = args.handId;
+
+                document.getElementById("hitButton").disabled = false;
+                document.getElementById("standButton").disabled = false;
+                document.getElementById("splitButton").disabled = false;
+                document.getElementById("doubleButton").disabled = false;
             });
             connection.on("OnPlayerBusted", (args) => {
                 log(`PlayerGuid: ${args.playerGuid}, PlayerName: ${args.playerName} has busted with hand: ${args.handId}.`);
@@ -197,6 +223,7 @@
             function log(message) {
                 const gameStatus = document.getElementById("gameStatus");
                 gameStatus.innerHTML += `<p>${message}</p>`;
+                window.scrollTo(0, document.body.scrollHeight);
             }
         </script>
     </body>

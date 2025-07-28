@@ -83,7 +83,7 @@ public class BlackjackHub : Hub
         _gameRoomManager.AddPlayerToRoom("defaultRoom", player);
         await Groups.AddToGroupAsync(Context.ConnectionId, "defaultRoom");
 
-        await Clients.Caller.SendAsync("OnJoinSuccess", userName);
+        await Clients.Caller.SendAsync("OnJoinSuccess", userName, player.Guid.ToString());
         await Clients.Others.SendAsync("OnUserJoined", userName);
 
         Console.WriteLine($"{userName} joined with connection ID: {Context.ConnectionId}");
