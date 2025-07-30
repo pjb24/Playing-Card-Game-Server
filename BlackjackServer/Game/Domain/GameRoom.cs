@@ -32,7 +32,7 @@ public class GameRoom
         _deck = new();
     }
 
-    public async Task SendToPlayer(Player player, string methodName, object args)
+    public async Task SendToPlayer(Player player, string methodName, string json)
     {
         try
         {
@@ -43,7 +43,7 @@ public class GameRoom
                 return;
             }
 
-            await _hubContext.Clients.Client(user.ConnectionId).SendAsync(methodName, args);
+            await _hubContext.Clients.Client(user.ConnectionId).SendAsync("ReceiveCommand", methodName, json);
         }
         catch (Exception ex)
         {
@@ -51,11 +51,11 @@ public class GameRoom
         }
     }
 
-    public async Task SendToAll(string methodName, object args)
+    public async Task SendToAll(string methodName, string json)
     {
         try
         {
-            await _hubContext.Clients.Group(RoomId).SendAsync(methodName, args);
+            await _hubContext.Clients.Group(RoomId).SendAsync("ReceiveCommand", methodName, json);
         }
         catch (Exception ex)
         {
@@ -151,29 +151,32 @@ public class GameRoom
 
         var card = _deck.DrawCard();
         hand.AddCard(card);
-        _ = SendToAll("OnCardDealt", new
-        {
-            playerGuid = player.Guid.ToString(),
-            playerName = player.DisplayName,
-            cardString = card.ToString(),
-            handId = hand.HandId.ToString()
-        });
+
+        OnCardDealtDTO onCardDealtDTO = new();
+        onCardDealtDTO.playerGuid = player.Guid.ToString();
+        onCardDealtDTO.playerName = player.DisplayName;
+        onCardDealtDTO.cardString = card.ToString();
+        onCardDealtDTO.handId = hand.HandId.ToString();
+        string onCardDealtJson = Newtonsoft.Json.JsonConvert.SerializeObject(onCardDealtDTO);
+        _ = SendToAll("OnCardDealt", onCardDealtJson);
 
         if (hand.IsBust())
         {
-            _ = SendToAll("OnPlayerBusted", new
-            {
-                playerGuid = player.Guid.ToString(),
-                playerName = player.DisplayName,
-                handId = hand.HandId.ToString()
-            });
+            OnPlayerBustedDTO onPlayerBustedDTO = new();
+            onPlayerBustedDTO.playerGuid = player.Guid.ToString();
+            onPlayerBustedDTO.playerName = player.DisplayName;
+            onPlayerBustedDTO.handId = hand.HandId.ToString();
+            string onPlayerBustedJson = Newtonsoft.Json.JsonConvert.SerializeObject(onPlayerBustedDTO);
+            _ = SendToAll("OnPlayerBusted", onPlayerBustedJson);
+
             hand.SetActionDone();
-            _ = SendToAll("OnActionDone", new
-            {
-                playerGuid = player.Guid.ToString(),
-                playerName = player.DisplayName,
-                handId = hand.HandId.ToString()
-            });
+
+            OnActionDoneDTO onActionDoneDTO = new();
+            onActionDoneDTO.playerGuid = player.Guid.ToString();
+            onActionDoneDTO.playerName = player.DisplayName;
+            onActionDoneDTO.handId = hand.HandId.ToString();
+            string onActionDoneJson = Newtonsoft.Json.JsonConvert.SerializeObject(onActionDoneDTO);
+            _ = SendToAll("OnActionDone", onActionDoneJson);
         }
 
         ChangeState(new PlayerTurnState(this));
@@ -193,12 +196,13 @@ public class GameRoom
         }
 
         hand.SetActionDone();
-        _ = SendToAll("OnActionDone", new
-        {
-            playerGuid = player.Guid.ToString(),
-            playerName = player.DisplayName,
-            handId = hand.HandId.ToString()
-        });
+
+        OnActionDoneDTO onActionDoneDTO = new();
+        onActionDoneDTO.playerGuid = player.Guid.ToString();
+        onActionDoneDTO.playerName = player.DisplayName;
+        onActionDoneDTO.handId = hand.HandId.ToString();
+        string onActionDoneJson = Newtonsoft.Json.JsonConvert.SerializeObject(onActionDoneDTO);
+        _ = SendToAll("OnActionDone", onActionDoneJson);
 
         ChangeState(new PlayerTurnState(this));
 
@@ -229,21 +233,23 @@ public class GameRoom
         // 새로운 핸드를 현재 핸드의 다음 index로 insert
         var index = player.IndexOfHand(hand);
         PlayerHand newHand = player.InsertHand(index + 1);
-        _ = SendToAll("OnHandSplit", new
-        {
-            playerName = player.DisplayName,
-            handId = hand.HandId.ToString(),
-            newHandId = newHand.HandId.ToString()
-        });
+
+        OnHandSplitDTO onHandSplitDTO = new();
+        onHandSplitDTO.playerName = player.DisplayName;
+        onHandSplitDTO.handId = hand.HandId.ToString();
+        onHandSplitDTO.newHandId = newHand.HandId.ToString();
+        string onHandSplitJson = Newtonsoft.Json.JsonConvert.SerializeObject(onHandSplitDTO);
+        _ = SendToAll("OnHandSplit", onHandSplitJson);
 
         // 새로운 핸드에 베팅 입력
         player.PlaceBet(hand.BetAmount, newHand);
-        _ = SendToAll("OnBetPlaced", new
-        {
-            playerName = player.DisplayName,
-            betAmount = hand.BetAmount,
-            handId = newHand.HandId.ToString()
-        });
+
+        OnBetPlacedDTO onBetPlacedDTO = new();
+        onBetPlacedDTO.playerName = player.DisplayName;
+        onBetPlacedDTO.betAmount = hand.BetAmount;
+        onBetPlacedDTO.handId = newHand.HandId.ToString();
+        string onBetPlacedJson = Newtonsoft.Json.JsonConvert.SerializeObject(onBetPlacedDTO);
+        _ = SendToAll("OnBetPlaced", onBetPlacedJson);
 
         // 현재 핸드의 2번째 카드를 새로운 핸드로 나눔
         var Cards = hand.GetCards();
@@ -280,43 +286,48 @@ public class GameRoom
 
         // Increase bet
         player.DoubleDown(hand);
-        _ = SendToAll("OnBetPlaced", new
-        {
-            playerName = player.DisplayName,
-            betAmount = hand.BetAmount,
-            handId = hand.HandId.ToString()
-        });
+
+        OnBetPlacedDTO onBetPlacedDTO = new();
+        onBetPlacedDTO.playerName = player.DisplayName;
+        onBetPlacedDTO.betAmount = hand.BetAmount;
+        onBetPlacedDTO.handId = hand.HandId.ToString();
+        string onBetPlacedJson = Newtonsoft.Json.JsonConvert.SerializeObject(onBetPlacedDTO);
+        _ = SendToAll("OnBetPlaced", onBetPlacedJson);
 
         // Draw card
         var card = _deck.DrawCard();
         hand.AddCard(card);
-        _ = SendToAll("OnCardDealt", new
-        {
-            playerGuid = player.Guid.ToString(),
-            playerName = player.DisplayName,
-            cardString = card.ToString(),
-            handId = hand.HandId.ToString()
-        });
+
+        OnCardDealtDTO onCardDealtDTO = new();
+        onCardDealtDTO.playerGuid = player.Guid.ToString();
+        onCardDealtDTO.playerName = player.DisplayName;
+        onCardDealtDTO.cardString = card.ToString();
+        onCardDealtDTO.handId = hand.HandId.ToString();
+        string onCardDealtJson = Newtonsoft.Json.JsonConvert.SerializeObject(onCardDealtDTO);
+        _ = SendToAll("OnCardDealt", onCardDealtJson);
 
         // Check bust
         if (hand.IsBust())
         {
-            _ = SendToAll("OnPlayerBusted", new
-            {
-                playerGuid = player.Guid.ToString(),
-                playerName = player.DisplayName,
-                handId = hand.HandId.ToString()
-            });
+            OnPlayerBustedDTO onPlayerBustedDTO = new();
+            onPlayerBustedDTO.playerGuid = player.Guid.ToString();
+            onPlayerBustedDTO.playerName = player.DisplayName;
+            onPlayerBustedDTO.handId = hand.HandId.ToString();
+            string onPlayerBustedJson = Newtonsoft.Json.JsonConvert.SerializeObject(onPlayerBustedDTO);
+            _ = SendToAll("OnPlayerBusted", onPlayerBustedJson);
         }
 
         // Stand hand
         hand.SetActionDone();
-        _ = SendToAll("OnActionDone", new
-        {
-            playerGuid = player.Guid.ToString(),
-            playerName = player.DisplayName,
-            handId = hand.HandId.ToString()
-        });
+
+        OnActionDoneDTO onActionDoneDTO = new();
+        onActionDoneDTO.playerGuid = player.Guid.ToString();
+        onActionDoneDTO.playerName = player.DisplayName;
+        onActionDoneDTO.handId = hand.HandId.ToString();
+        string onActionDoneJson = Newtonsoft.Json.JsonConvert.SerializeObject(onActionDoneDTO);
+        _ = SendToAll("OnActionDone", onActionDoneJson);
+
+        ChangeState(new PlayerTurnState(this));
 
         return true;
     }
@@ -339,10 +350,10 @@ public class GameRoom
         }
         else
         {
-            _ = SendToAll("OnDealerHoleCardRevealed", new
-            {
-                card = dealerHiddenCard.ToString()
-            });
+            OnDealerHoleCardRevealedDTO onDealerHoleCardRevealedDTO = new();
+            onDealerHoleCardRevealedDTO.cardString = dealerHiddenCard.ToString();
+            string onDealerHoleCardRevealedJson = Newtonsoft.Json.JsonConvert.SerializeObject(onDealerHoleCardRevealedDTO);
+            _ = SendToAll("OnDealerHoleCardRevealed", onDealerHoleCardRevealedJson);
         }
     }
 }

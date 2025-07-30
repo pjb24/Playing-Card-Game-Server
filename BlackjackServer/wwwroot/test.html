@@ -16,23 +16,40 @@
 
         <button id="leaveButton" onclick="leaveGame()">Leave Game</button>
 
-        
 
         <div id="gameArea" style="display:none;">
             <h3>Game Area</h3>
             <div id="gameStatus"></div>
-            <div id="playerCards"></div>
-            <div id="dealerCards"></div>
             <button id="hitButton" onclick="hit()">Hit</button>
             <button id="standButton" onclick="stand()">Stand</button>
             <button id="splitButton" onclick="split()">Split</button>
             <button id="doubleButton" onclick="doubleDown()">Double Down</button>
             <button id="leaveButton">Leave Game</button>
+            <div id="playerCards"></div>
+            <div id="dealerCards"></div>
             <div id="chips"></div>
         </div>
         
 
         <script>
+            const CommandDispatcher = {
+                handlers: {},
+
+                register(commandName, handler) {
+                    this.handlers[commandName] = handler;
+                },
+
+                dispatch(commandName, payload) {
+                    const handler = this.handlers[commandName];
+                    if (handler) {
+                        console.log(`[Dispatcher] 실행할 명령: ${commandName}`);
+                        handler(payload);
+                    } else {
+                        console.warn(`[Dispatcher] 알 수 없는 명령: ${commandName}`);
+                    }
+                }
+            };
+
             const connection = new signalR.HubConnectionBuilder()
                 .withUrl("/blackjackHub")
                 .configureLogging(signalR.LogLevel.Information)
@@ -41,81 +58,99 @@
             let currentHandId = null;
             let playerGuid = null;
 
+
             // Connection event handlers
-            connection.on("Welcome", (message) => {
-                log(message);
+            CommandDispatcher.register("Welcome", (args) => {
+                const obj = JSON.parse(args);
+                log(obj.message);
             });
-            connection.on("UserConnected", (connectionId) => {
-                log(`User connected: ${connectionId}`);
+            CommandDispatcher.register("UserConnected", (args) => {
+                const obj = JSON.parse(args);
+                log(`User connected: ${obj.message}`);
             });
-            connection.on("UserDisconnected", (connectionId) => {
-                log(`User disconnected: ${connectionId}`);
+            CommandDispatcher.register("UserDisconnected", (args) => {
+                const obj = JSON.parse(args);
+                log(`User disconnected: ${obj.message}`);
             });
-            connection.on("OnError", (error) => {
-                log(`Error: ${error}`);
+            CommandDispatcher.register("OnError", (args) => {
+                const obj = JSON.parse(args);
+                log(`Error: ${obj.message}`);
             });
 
 
             // Player Join/Leave
-            connection.on("OnJoinSuccess", (name, guid) => {
-                log(`Joined as Name: ${name}, Guid: ${guid}`);
+            CommandDispatcher.register("OnJoinSuccess", (args) => {
+                const obj = JSON.parse(args);
+                log(`Joined as Name: ${obj.userName}, Guid: ${obj.playerGuid}`);
                 document.getElementById("gameArea").style.display = "block";
                 document.getElementById("joinButton").style.display = "none";
 
-                playerGuid = guid;
+                playerGuid = obj.playerGuid;
 
                 document.getElementById("hitButton").disabled = true;
                 document.getElementById("standButton").disabled = true;
                 document.getElementById("splitButton").disabled = true;
                 document.getElementById("doubleButton").disabled = true;
             });
-            connection.on("OnUserJoined", (name) => {
-                log(`${name} has joined the game.`);
+            CommandDispatcher.register("OnUserJoined", (args) => {
+                const obj = JSON.parse(args);
+                log(`${obj.userName} has joined the game.`);
             });
-            connection.on("OnUserLeft", (name) => {
-                log(`${name} has left the game.`);
+            CommandDispatcher.register("OnUserLeft", (args) => {
+                const obj = JSON.parse(args);
+                log(`${obj.connectionId} has left the game.`);
             });
 
             // Player Remain Chips
-            connection.on("OnPlayerRemainChips", (chips) => {
+            CommandDispatcher.register("OnPlayerRemainChips", (args) => {
+                const obj = JSON.parse(args);
                 const playerChips = document.getElementById("chips");
-                playerChips.innerHTML = `<p>RemainChips: ${chips}</p>`;
+                playerChips.innerHTML = `<p>RemainChips: ${obj.chips}</p>`;
             });
 
-            connection.on("OnGameStateChanged", (state) => {
-                log(`Game state changed to: ${state}`);
+            CommandDispatcher.register("OnGameStateChanged", (args) => {
+                const obj = JSON.parse(args);
+                log(`Game state changed to: ${obj.state}`);
                 // Update UI based on game state
             });
 
 
             // Betting State
-            connection.on("OnTimeToBetting", (args) => {
-                log(`Hand: ${args.handId} needs to place a bet.`);
-                currentHandId = args.handId;
+            CommandDispatcher.register("OnTimeToBetting", (args) => {
+                const obj = JSON.parse(args);
+                log(`Hand: ${obj.handId} needs to place a bet.`);
+                currentHandId = obj.handId;
             });
-            connection.on("OnBetPlaced", (args) => {
-                log(`Player ${args.playerName}, Hand: ${args.handId} Bet placed: ${args.betAmount}`);
+            CommandDispatcher.register("OnBetPlaced", (args) => {
+                const obj = JSON.parse(args);
+                log(`Player ${obj.playerName}, Hand: ${obj.handId} Bet placed: ${obj.betAmount}`);
             });
 
 
             // Dealing State
-            connection.on("OnCardDealt", (args) => {
-                log(`Card dealt to PlayerGuid: ${args.playerGuid}, PlayerName: ${args.playerName}: ${args.cardString}. Hand: ${args.handId}`);
+            CommandDispatcher.register("OnCardDealt", (args) => {
+                const obj = JSON.parse(args);
+                log(`Card dealt to PlayerGuid: ${obj.playerGuid}, PlayerName: ${obj.playerName}: ${obj.cardString}. Hand: ${obj.handId}`);
             });
-            connection.on("OnDealerCardDealt", (args) => {
-                log(`Dealer card dealt: ${args.cardString}`);
+            CommandDispatcher.register("OnDealerCardDealt", (args) => {
+                const obj = JSON.parse(args);
+                log(`Dealer card dealt: ${obj.cardString}`);
+                const dealerCards = document.getElementById("dealerCards");
+                dealerCards.innerHTML += `<p></p>`;
             });
-            connection.on("OnDealerHiddenCardDealt", (args) => {
+            CommandDispatcher.register("OnDealerHiddenCardDealt", (args) => {
+                const obj = JSON.parse(args);
                 log("Dealer's hidden card dealt.");
             });
             
 
             // PlayerTurn State
-            connection.on("OnTimeToAction", (args) => {
-                log(`PlayerGuid: ${args.playerGuid}, PlayerName: ${args.playerName}, Hand: ${args.handId}. Choose an action.`);
+            CommandDispatcher.register("OnTimeToAction", (args) => {
+                const obj = JSON.parse(args);
+                log(`PlayerGuid: ${obj.playerGuid}, PlayerName: ${obj.playerName}, Hand: ${obj.handId}. Choose an action.`);
                 
-                if (playerGuid !== args.playerGuid) {
-                    log(`It's not your turn! Waiting for PlayerGuid: ${args.playerGuid}, PlayerName: ${args.playerName}.`);
+                if (playerGuid !== obj.playerGuid) {
+                    log(`It's not your turn! Waiting for PlayerGuid: ${obj.playerGuid}, PlayerName: ${obj.playerName}.`);
 
                     document.getElementById("hitButton").disabled = true;
                     document.getElementById("standButton").disabled = true;
@@ -125,35 +160,46 @@
                     return;
                 }
 
-                currentHandId = args.handId;
+                currentHandId = obj.handId;
 
                 document.getElementById("hitButton").disabled = false;
                 document.getElementById("standButton").disabled = false;
                 document.getElementById("splitButton").disabled = false;
                 document.getElementById("doubleButton").disabled = false;
             });
-            connection.on("OnPlayerBusted", (args) => {
-                log(`PlayerGuid: ${args.playerGuid}, PlayerName: ${args.playerName} has busted with hand: ${args.handId}.`);
+            CommandDispatcher.register("OnPlayerBusted", (args) => {
+                const obj = JSON.parse(args);
+                log(`PlayerGuid: ${obj.playerGuid}, PlayerName: ${obj.playerName} has busted with hand: ${obj.handId}.`);
             });
-            connection.on("OnActionDone", (args) => {
-                log(`PlayerGuid: ${args.playerGuid}, PlayerName: ${args.playerName} has completed their action with hand: ${args.handId}.`);
+            CommandDispatcher.register("OnActionDone", (args) => {
+                const obj = JSON.parse(args);
+                log(`PlayerGuid: ${obj.playerGuid}, PlayerName: ${obj.playerName} has completed their action with hand: ${obj.handId}.`);
             });
-            connectin.on("OnHandSplit", (args) => {
-                log(`PlayerName: ${args.playerName}, Split From Hand: ${args.handId}, To Hand: ${args.newHandId}`);
+            CommandDispatcher.register("OnHandSplit", (args) => {
+                const obj = JSON.parse(args);
+                log(`PlayerName: ${obj.playerName}, Split From Hand: ${obj.handId}, To Hand: ${obj.newHandId}`);
             });
 
             // DealerTurn State
-            connection.on("OnDealerHoleCardRevealed", (args) => {
-                log(`Dealer's hole card revealed: ${args.card}`);
+            CommandDispatcher.register("OnDealerHoleCardRevealed", (args) => {
+                const obj = JSON.parse(args);
+                log(`Dealer's hole card revealed: ${obj.cardString}`);
             });
 
 
             // Result State
-            connection.on("OnHandEvaluation", (args) => {
-                log(`Hand evaluation for PlayerGuid: ${args.playerGuid}, PlayerName: ${args.playerName}: HandId: ${args.handId}. Result: ${args.evaluationResult}`);
+            CommandDispatcher.register("OnHandEvaluation", (args) => {
+                const obj = JSON.parse(args);
+                log(`Hand evaluation for PlayerGuid: ${obj.playerGuid}, PlayerName: ${obj.playerName}: HandId: ${obj.handId}. Result: ${obj.evaluationResult}`);
             });
-            connection.on("OnPayout", (args) => {
-                log(`Payout for Hand: ${args.handId}, Result: ${args.evaluationResult}`);
+            CommandDispatcher.register("OnPayout", (args) => {
+                const obj = JSON.parse(args);
+                log(`Payout for Hand: ${obj.handId}, Result: ${obj.evaluationResult}`);
+            });
+
+
+            connection.on("ReceiveCommand", (commandName, payload) => {
+                CommandDispatcher.dispatch(commandName, payload);
             });
 
 
@@ -170,6 +216,10 @@
 
             async function startGame() {
                 try {
+                    const playerCards = document.getElementById("playerCards");
+                    playerCards.innerHTML = ``;
+                    const dealerCards = document.getElementById("dealerCards");
+                    dealerCards.innerHTML = ``;
                     await connection.invoke("StartGame");
                 } catch (err) {
                     log(`Error start game: ${err.toString()}`);

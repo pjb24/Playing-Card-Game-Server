@@ -38,21 +38,22 @@ public class PlayerTurnState : IGameState
         {
             var card = _gameRoom.Deck.DrawCard();
             _currentHand.AddCard(card);
-            _ = _gameRoom.SendToAll("OnCardDealt", new
-            {
-                playerGuid = _currentPlayer.Guid.ToString(),
-                playerName = _currentPlayer.DisplayName,
-                cardString = card.ToString(),
-                handId = _currentHand.HandId.ToString()
-            });
+
+            OnCardDealtDTO onCardDealtDTO = new();
+            onCardDealtDTO.playerGuid = _currentPlayer.Guid.ToString();
+            onCardDealtDTO.playerName = _currentPlayer.DisplayName;
+            onCardDealtDTO.cardString = card.ToString();
+            onCardDealtDTO.handId = _currentHand.HandId.ToString();
+            string onCardDealtJson = Newtonsoft.Json.JsonConvert.SerializeObject(onCardDealtDTO);
+            _ = _gameRoom.SendToAll("OnCardDealt", onCardDealtJson);
         }
 
-        _ = _gameRoom.SendToAll("OnTimeToAction", new
-        {
-            handId = _currentHand.HandId.ToString(),
-            playerGuid = _currentPlayer.Guid.ToString(),
-            playerName = _currentPlayer.DisplayName
-        });
+        OnTimeToActionDTO onTimeToActionDTO = new();
+        onTimeToActionDTO.handId = _currentHand.HandId.ToString();
+        onTimeToActionDTO.playerGuid = _currentPlayer.Guid.ToString();
+        onTimeToActionDTO.playerName = _currentPlayer.DisplayName;
+        string onTimeToActionJson = Newtonsoft.Json.JsonConvert.SerializeObject(onTimeToActionDTO);
+        _ = _gameRoom.SendToAll("OnTimeToAction", onTimeToActionJson);
     }
 
     public void Exit()

@@ -28,11 +28,17 @@ public class BlackjackHub : Hub
         // 예를 들어, 사용자의 게임 기록이나 환경 설정을 로드할 수 있습니다.
         // 허브에서 사용할 필요한 리소스나 서비스를 설정할 수도 있습니다.
 
+        WelcomeDTO welcomeDTO = new();
+        welcomeDTO.message = "Welcome to the Blackjack game!";
+        string welcomeJson = Newtonsoft.Json.JsonConvert.SerializeObject(welcomeDTO);
         // 새로 연결된 사용자에게 메시지를 보낼 수도 있습니다.
-        await Clients.Caller.SendAsync("Welcome", "Welcome to the Blackjack game!");
+        await Clients.Caller.SendAsync("ReceiveCommand", "Welcome", welcomeJson);
 
+        UserConnectedDTO userConnectedDTO = new();
+        userConnectedDTO.message = Context.ConnectionId;
+        string userConnectedJson = Newtonsoft.Json.JsonConvert.SerializeObject(userConnectedDTO);
         // 모든 클라이언트에게 메시지를 보낼 수 있습니다.
-        await Clients.All.SendAsync("UserConnected", Context.ConnectionId);
+        await Clients.All.SendAsync("ReceiveCommand", "UserConnected", userConnectedJson);
 
         // 기본 클래스의 OnConnectedAsync 메서드를 호출하여 SignalR이 연결 수명 주기를 올바르게 관리하도록 합니다.
         await base.OnConnectedAsync();
@@ -42,8 +48,11 @@ public class BlackjackHub : Hub
     {
         Console.WriteLine($"User disconnected: {Context.ConnectionId}");
 
+        UserDisconnectedDTO userDisconnectedDTO = new();
+        userDisconnectedDTO.message = Context.ConnectionId;
+        string userDisconnectedJson = Newtonsoft.Json.JsonConvert.SerializeObject(userDisconnectedDTO);
         // 다른 사용자에게 연결이 끊어진 사용자가 있음을 알리는 메시지를 보낼 수 있습니다.
-        await Clients.All.SendAsync("UserDisconnected", Context.ConnectionId);
+        await Clients.All.SendAsync("ReceiveCommand", "UserDisconnected", userDisconnectedJson);
 
         // 사용자가 특정 게임 그룹에 속해 있다면 해당 그룹에서 제거할 수도 있습니다.
         // await Groups.RemoveFromGroupAsync(Context.ConnectionId, "GameGroupName"); // 예시
@@ -69,24 +78,41 @@ public class BlackjackHub : Hub
         user = _userManager.GetUserByConnectionId(Context.ConnectionId);
         if (user == null)
         {
-            await Clients.Caller.SendAsync("OnError", "플레이어를 찾을 수 없습니다.");
+            OnErrorDTO onErrorDTO = new();
+            onErrorDTO.message = "플레이어를 찾을 수 없습니다.";
+            string onErrorJson = Newtonsoft.Json.JsonConvert.SerializeObject(onErrorDTO);
+            await Clients.Caller.SendAsync("ReceiveCommand", "OnError", onErrorJson);
             return;
         }
 
         var player = _userManager.GetPlayer(user.Id);
         if (player == null)
         {
-            await Clients.Caller.SendAsync("OnError", "플레이어를 찾을 수 없습니다.");
+            OnErrorDTO onErrorDTO = new();
+            onErrorDTO.message = "플레이어를 찾을 수 없습니다.";
+            string onErrorJson = Newtonsoft.Json.JsonConvert.SerializeObject(onErrorDTO);
+            await Clients.Caller.SendAsync("ReceiveCommand", "OnError", onErrorJson);
             return;
         }
 
         _gameRoomManager.AddPlayerToRoom("defaultRoom", player);
         await Groups.AddToGroupAsync(Context.ConnectionId, "defaultRoom");
 
-        await Clients.Caller.SendAsync("OnJoinSuccess", userName, player.Guid.ToString());
-        await Clients.Others.SendAsync("OnUserJoined", userName);
+        OnJoinSuccessDTO onJoinSuccessDTO = new();
+        onJoinSuccessDTO.userName = userName;
+        onJoinSuccessDTO.playerGuid = player.Guid.ToString();
+        string onJoinSuccessJson = Newtonsoft.Json.JsonConvert.SerializeObject(onJoinSuccessDTO);
+        await Clients.Caller.SendAsync("ReceiveCommand", "OnJoinSuccess", onJoinSuccessJson);
 
-        await Clients.Caller.SendAsync("OnPlayerRemainChips", player.Chips.ToString());
+        OnUserJoinedDTO onUserJoinedDTO = new();
+        onUserJoinedDTO.userName = userName;
+        string onUserJoinedJson = Newtonsoft.Json.JsonConvert.SerializeObject(onUserJoinedDTO);
+        await Clients.Others.SendAsync("ReceiveCommand", "OnUserJoined", onUserJoinedJson);
+
+        OnPlayerRemainChipsDTO onPlayerRemainChipsDTO = new();
+        onPlayerRemainChipsDTO.chips = player.Chips.ToString();
+        string onPlayerRemainChipsJson = Newtonsoft.Json.JsonConvert.SerializeObject(onPlayerRemainChipsDTO);
+        await Clients.Caller.SendAsync("ReceiveCommand", "OnPlayerRemainChips", onPlayerRemainChipsJson);
 
         Console.WriteLine($"{userName} joined with connection ID: {Context.ConnectionId}");
     }
@@ -96,26 +122,39 @@ public class BlackjackHub : Hub
         var user = _userManager.GetUserByConnectionId(Context.ConnectionId);
         if (user == null)
         {
-            await Clients.Caller.SendAsync("OnError", "플레이어를 찾을 수 없습니다.");
+            OnErrorDTO onErrorDTO = new();
+            onErrorDTO.message = "플레이어를 찾을 수 없습니다.";
+            string onErrorJson = Newtonsoft.Json.JsonConvert.SerializeObject(onErrorDTO);
+            await Clients.Caller.SendAsync("ReceiveCommand", "OnError", onErrorJson);
             return;
         }
 
         var player = _userManager.GetPlayer(user.Id);
         if (player == null)
         {
-            await Clients.Caller.SendAsync("OnError", "플레이어를 찾을 수 없습니다.");
+            OnErrorDTO onErrorDTO = new();
+            onErrorDTO.message = "플레이어를 찾을 수 없습니다.";
+            string onErrorJson = Newtonsoft.Json.JsonConvert.SerializeObject(onErrorDTO);
+            await Clients.Caller.SendAsync("ReceiveCommand", "OnError", onErrorJson);
             return;
         }
 
         var room = _gameRoomManager.GetRoomByPlayerId(player.Id);
         if (room == null)
         {
-            await Clients.Caller.SendAsync("OnError", "게임 방을 찾을 수 없습니다.");
+            OnErrorDTO onErrorDTO = new();
+            onErrorDTO.message = "게임 방을 찾을 수 없습니다.";
+            string onErrorJson = Newtonsoft.Json.JsonConvert.SerializeObject(onErrorDTO);
+            await Clients.Caller.SendAsync("ReceiveCommand", "OnError", onErrorJson);
             return;
         }
 
         room.StartGame();
-        await Clients.Group(room.RoomId).SendAsync("OnGameStateChanged", room.CurrentState);
+
+        OnGameStateChangedDTO onGameStateChangedDTO = new();
+        onGameStateChangedDTO.state = room.CurrentState;
+        string onGameStateChangedJson = Newtonsoft.Json.JsonConvert.SerializeObject(onGameStateChangedDTO);
+        await Clients.Group(room.RoomId).SendAsync("ReceiveCommand", "OnGameStateChanged", onGameStateChangedJson);
     }
 
     public async Task PlaceBet(int amount, string currentHandGuid)
@@ -124,7 +163,11 @@ public class BlackjackHub : Hub
         if (user == null)
         {
             Console.WriteLine("플레이어를 찾을 수 없습니다.");
-            await Clients.Caller.SendAsync("OnError", "플레이어를 찾을 수 없습니다.");
+
+            OnErrorDTO onErrorDTO = new();
+            onErrorDTO.message = "플레이어를 찾을 수 없습니다.";
+            string onErrorJson = Newtonsoft.Json.JsonConvert.SerializeObject(onErrorDTO);
+            await Clients.Caller.SendAsync("ReceiveCommand", "OnError", onErrorJson);
             return;
         }
 
@@ -132,7 +175,11 @@ public class BlackjackHub : Hub
         if (player == null)
         {
             Console.WriteLine("플레이어를 찾을 수 없습니다.");
-            await Clients.Caller.SendAsync("OnError", "플레이어를 찾을 수 없습니다.");
+
+            OnErrorDTO onErrorDTO = new();
+            onErrorDTO.message = "플레이어를 찾을 수 없습니다.";
+            string onErrorJson = Newtonsoft.Json.JsonConvert.SerializeObject(onErrorDTO);
+            await Clients.Caller.SendAsync("ReceiveCommand", "OnError", onErrorJson);
             return;
         }
 
@@ -140,7 +187,11 @@ public class BlackjackHub : Hub
         if (room == null)
         {
             Console.WriteLine("게임 방을 찾을 수 없습니다.");
-            await Clients.Caller.SendAsync("OnError", "게임 방을 찾을 수 없습니다.");
+
+            OnErrorDTO onErrorDTO = new();
+            onErrorDTO.message = "게임 방을 찾을 수 없습니다.";
+            string onErrorJson = Newtonsoft.Json.JsonConvert.SerializeObject(onErrorDTO);
+            await Clients.Caller.SendAsync("ReceiveCommand", "OnError", onErrorJson);
             return;
         }
 
@@ -148,7 +199,11 @@ public class BlackjackHub : Hub
         if (guid == Guid.Empty)
         {
             Console.WriteLine("유효하지 않은 핸드 ID입니다.");
-            await Clients.Caller.SendAsync("OnError", "유효하지 않은 핸드 ID입니다.");
+
+            OnErrorDTO onErrorDTO = new();
+            onErrorDTO.message = "유효하지 않은 핸드 ID입니다.";
+            string onErrorJson = Newtonsoft.Json.JsonConvert.SerializeObject(onErrorDTO);
+            await Clients.Caller.SendAsync("ReceiveCommand", "OnError", onErrorJson);
             return;
         }
 
@@ -156,26 +211,37 @@ public class BlackjackHub : Hub
         if (currentHand == null)
         {
             Console.WriteLine("해당 핸드를 찾을 수 없습니다.");
-            await Clients.Caller.SendAsync("OnError", "해당 핸드를 찾을 수 없습니다.");
+
+            OnErrorDTO onErrorDTO = new();
+            onErrorDTO.message = "해당 핸드를 찾을 수 없습니다.";
+            string onErrorJson = Newtonsoft.Json.JsonConvert.SerializeObject(onErrorDTO);
+            await Clients.Caller.SendAsync("ReceiveCommand", "OnError", onErrorJson);
             return;
         }
 
         bool success = room.PlaceBet(player, amount, currentHand);
         if (success)
         {
-            await Clients.Group(room.RoomId).SendAsync("OnBetPlaced", new
-            {
-                playerName = player.DisplayName,
-                betAmount = amount,
-                handId = currentHand.HandId.ToString()
-            });
-            
-            await Clients.Caller.SendAsync("OnPlayerRemainChips", player.Chips.ToString());
+            OnBetPlacedDTO onBetPlacedDTO = new();
+            onBetPlacedDTO.playerName = player.DisplayName;
+            onBetPlacedDTO.betAmount = amount;
+            onBetPlacedDTO.handId = currentHand.HandId.ToString();
+            string onBetPlacedJson = Newtonsoft.Json.JsonConvert.SerializeObject(onBetPlacedDTO);
+            await Clients.Group(room.RoomId).SendAsync("ReceiveCommand", "OnBetPlaced", onBetPlacedJson);
+
+            OnPlayerRemainChipsDTO onPlayerRemainChipsDTO = new();
+            onPlayerRemainChipsDTO.chips = player.Chips.ToString();
+            string onPlayerRemainChipsJson = Newtonsoft.Json.JsonConvert.SerializeObject(onPlayerRemainChipsDTO);
+            await Clients.Caller.SendAsync("ReceiveCommand", "OnPlayerRemainChips", onPlayerRemainChipsJson);
         }
         else
         {
             Console.WriteLine("베팅에 실패했습니다. 충분한 금액이 있는지 확인하세요.");
-            await Clients.Caller.SendAsync("OnError", "베팅에 실패했습니다. 충분한 금액이 있는지 확인하세요.");
+
+            OnErrorDTO onErrorDTO = new();
+            onErrorDTO.message = "베팅에 실패했습니다. 충분한 금액이 있는지 확인하세요.";
+            string onErrorJson = Newtonsoft.Json.JsonConvert.SerializeObject(onErrorDTO);
+            await Clients.Caller.SendAsync("ReceiveCommand", "OnError", onErrorJson);
         }
     }
 
@@ -184,35 +250,50 @@ public class BlackjackHub : Hub
         var user = _userManager.GetUserByConnectionId(Context.ConnectionId);
         if (user == null)
         {
-            await Clients.Caller.SendAsync("OnError", "플레이어를 찾을 수 없습니다.");
+            OnErrorDTO onErrorDTO = new();
+            onErrorDTO.message = "플레이어를 찾을 수 없습니다.";
+            string onErrorJson = Newtonsoft.Json.JsonConvert.SerializeObject(onErrorDTO);
+            await Clients.Caller.SendAsync("ReceiveCommand", "OnError", onErrorJson);
             return;
         }
 
         var player = _userManager.GetPlayer(user.Id);
         if (player == null)
         {
-            await Clients.Caller.SendAsync("OnError", "플레이어를 찾을 수 없습니다.");
+            OnErrorDTO onErrorDTO = new();
+            onErrorDTO.message = "플레이어를 찾을 수 없습니다.";
+            string onErrorJson = Newtonsoft.Json.JsonConvert.SerializeObject(onErrorDTO);
+            await Clients.Caller.SendAsync("ReceiveCommand", "OnError", onErrorJson);
             return;
         }
 
         var room = _gameRoomManager.GetRoomByPlayerId(player.Id);
         if (room == null)
         {
-            await Clients.Caller.SendAsync("OnError", "게임 방을 찾을 수 없습니다.");
+            OnErrorDTO onErrorDTO = new();
+            onErrorDTO.message = "게임 방을 찾을 수 없습니다.";
+            string onErrorJson = Newtonsoft.Json.JsonConvert.SerializeObject(onErrorDTO);
+            await Clients.Caller.SendAsync("ReceiveCommand", "OnError", onErrorJson);
             return;
         }
 
         var guid = Guid.TryParse(handGuid, out var parsedGuid) ? parsedGuid : Guid.Empty;
         if (guid == Guid.Empty)
         {
-            await Clients.Caller.SendAsync("OnError", "유효하지 않은 핸드 ID입니다.");
+            OnErrorDTO onErrorDTO = new();
+            onErrorDTO.message = "유효하지 않은 핸드 ID입니다.";
+            string onErrorJson = Newtonsoft.Json.JsonConvert.SerializeObject(onErrorDTO);
+            await Clients.Caller.SendAsync("ReceiveCommand", "OnError", onErrorJson);
             return;
         }
 
         var hand = player.GetHandById(guid);
         if (hand == null)
         {
-            await Clients.Caller.SendAsync("OnError", "해당 핸드를 찾을 수 없습니다.");
+            OnErrorDTO onErrorDTO = new();
+            onErrorDTO.message = "해당 핸드를 찾을 수 없습니다.";
+            string onErrorJson = Newtonsoft.Json.JsonConvert.SerializeObject(onErrorDTO);
+            await Clients.Caller.SendAsync("ReceiveCommand", "OnError", onErrorJson);
             return;
         }
 
@@ -224,35 +305,50 @@ public class BlackjackHub : Hub
         var user = _userManager.GetUserByConnectionId(Context.ConnectionId);
         if (user == null)
         {
-            await Clients.Caller.SendAsync("OnError", "플레이어를 찾을 수 없습니다.");
+            OnErrorDTO onErrorDTO = new();
+            onErrorDTO.message = "플레이어를 찾을 수 없습니다.";
+            string onErrorJson = Newtonsoft.Json.JsonConvert.SerializeObject(onErrorDTO);
+            await Clients.Caller.SendAsync("ReceiveCommand", "OnError", onErrorJson);
             return;
         }
 
         var player = _userManager.GetPlayer(user.Id);
         if (player == null)
         {
-            await Clients.Caller.SendAsync("OnError", "플레이어를 찾을 수 없습니다.");
+            OnErrorDTO onErrorDTO = new();
+            onErrorDTO.message = "플레이어를 찾을 수 없습니다.";
+            string onErrorJson = Newtonsoft.Json.JsonConvert.SerializeObject(onErrorDTO);
+            await Clients.Caller.SendAsync("ReceiveCommand", "OnError", onErrorJson);
             return;
         }
 
         var room = _gameRoomManager.GetRoomByPlayerId(player.Id);
         if (room == null)
         {
-            await Clients.Caller.SendAsync("OnError", "게임 방을 찾을 수 없습니다.");
+            OnErrorDTO onErrorDTO = new();
+            onErrorDTO.message = "게임 방을 찾을 수 없습니다.";
+            string onErrorJson = Newtonsoft.Json.JsonConvert.SerializeObject(onErrorDTO);
+            await Clients.Caller.SendAsync("ReceiveCommand", "OnError", onErrorJson);
             return;
         }
 
         var guid = Guid.TryParse(handGuid, out var parsedGuid) ? parsedGuid : Guid.Empty;
         if (guid == Guid.Empty)
         {
-            await Clients.Caller.SendAsync("OnError", "유효하지 않은 핸드 ID입니다.");
+            OnErrorDTO onErrorDTO = new();
+            onErrorDTO.message = "유효하지 않은 핸드 ID입니다.";
+            string onErrorJson = Newtonsoft.Json.JsonConvert.SerializeObject(onErrorDTO);
+            await Clients.Caller.SendAsync("ReceiveCommand", "OnError", onErrorJson);
             return;
         }
 
         var hand = player.GetHandById(guid);
         if (hand == null)
         {
-            await Clients.Caller.SendAsync("OnError", "해당 핸드를 찾을 수 없습니다.");
+            OnErrorDTO onErrorDTO = new();
+            onErrorDTO.message = "해당 핸드를 찾을 수 없습니다.";
+            string onErrorJson = Newtonsoft.Json.JsonConvert.SerializeObject(onErrorDTO);
+            await Clients.Caller.SendAsync("ReceiveCommand", "OnError", onErrorJson);
             return;
         }
 
@@ -264,35 +360,50 @@ public class BlackjackHub : Hub
         var user = _userManager.GetUserByConnectionId(Context.ConnectionId);
         if (user == null)
         {
-            await Clients.Caller.SendAsync("OnError", "플레이어를 찾을 수 없습니다.");
+            OnErrorDTO onErrorDTO = new();
+            onErrorDTO.message = "플레이어를 찾을 수 없습니다.";
+            string onErrorJson = Newtonsoft.Json.JsonConvert.SerializeObject(onErrorDTO);
+            await Clients.Caller.SendAsync("ReceiveCommand", "OnError", onErrorJson);
             return;
         }
 
         var player = _userManager.GetPlayer(user.Id);
         if (player == null)
         {
-            await Clients.Caller.SendAsync("OnError", "플레이어를 찾을 수 없습니다.");
+            OnErrorDTO onErrorDTO = new();
+            onErrorDTO.message = "플레이어를 찾을 수 없습니다.";
+            string onErrorJson = Newtonsoft.Json.JsonConvert.SerializeObject(onErrorDTO);
+            await Clients.Caller.SendAsync("ReceiveCommand", "OnError", onErrorJson);
             return;
         }
 
         var room = _gameRoomManager.GetRoomByPlayerId(player.Id);
         if (room == null)
         {
-            await Clients.Caller.SendAsync("OnError", "게임 방을 찾을 수 없습니다.");
+            OnErrorDTO onErrorDTO = new();
+            onErrorDTO.message = "게임 방을 찾을 수 없습니다.";
+            string onErrorJson = Newtonsoft.Json.JsonConvert.SerializeObject(onErrorDTO);
+            await Clients.Caller.SendAsync("ReceiveCommand", "OnError", onErrorJson);
             return;
         }
 
         var guid = Guid.TryParse(handGuid, out var parsedGuid) ? parsedGuid : Guid.Empty;
         if (guid == Guid.Empty)
         {
-            await Clients.Caller.SendAsync("OnError", "유효하지 않은 핸드 ID입니다.");
+            OnErrorDTO onErrorDTO = new();
+            onErrorDTO.message = "유효하지 않은 핸드 ID입니다.";
+            string onErrorJson = Newtonsoft.Json.JsonConvert.SerializeObject(onErrorDTO);
+            await Clients.Caller.SendAsync("ReceiveCommand", "OnError", onErrorJson);
             return;
         }
 
         var hand = player.GetHandById(guid);
         if (hand == null)
         {
-            await Clients.Caller.SendAsync("OnError", "해당 핸드를 찾을 수 없습니다.");
+            OnErrorDTO onErrorDTO = new();
+            onErrorDTO.message = "해당 핸드를 찾을 수 없습니다.";
+            string onErrorJson = Newtonsoft.Json.JsonConvert.SerializeObject(onErrorDTO);
+            await Clients.Caller.SendAsync("ReceiveCommand", "OnError", onErrorJson);
             return;
         }
 
@@ -304,35 +415,50 @@ public class BlackjackHub : Hub
         var user = _userManager.GetUserByConnectionId(Context.ConnectionId);
         if (user == null)
         {
-            await Clients.Caller.SendAsync("OnError", "플레이어를 찾을 수 없습니다.");
+            OnErrorDTO onErrorDTO = new();
+            onErrorDTO.message = "플레이어를 찾을 수 없습니다.";
+            string onErrorJson = Newtonsoft.Json.JsonConvert.SerializeObject(onErrorDTO);
+            await Clients.Caller.SendAsync("ReceiveCommand", "OnError", onErrorJson);
             return;
         }
 
         var player = _userManager.GetPlayer(user.Id);
         if (player == null)
         {
-            await Clients.Caller.SendAsync("OnError", "플레이어를 찾을 수 없습니다.");
+            OnErrorDTO onErrorDTO = new();
+            onErrorDTO.message = "플레이어를 찾을 수 없습니다.";
+            string onErrorJson = Newtonsoft.Json.JsonConvert.SerializeObject(onErrorDTO);
+            await Clients.Caller.SendAsync("ReceiveCommand", "OnError", onErrorJson);
             return;
         }
 
         var room = _gameRoomManager.GetRoomByPlayerId(player.Id);
         if (room == null)
         {
-            await Clients.Caller.SendAsync("OnError", "게임 방을 찾을 수 없습니다.");
+            OnErrorDTO onErrorDTO = new();
+            onErrorDTO.message = "게임 방을 찾을 수 없습니다.";
+            string onErrorJson = Newtonsoft.Json.JsonConvert.SerializeObject(onErrorDTO);
+            await Clients.Caller.SendAsync("ReceiveCommand", "OnError", onErrorJson);
             return;
         }
 
         var guid = Guid.TryParse(handGuid, out var parsedGuid) ? parsedGuid : Guid.Empty;
         if (guid == Guid.Empty)
         {
-            await Clients.Caller.SendAsync("OnError", "유효하지 않은 핸드 ID입니다.");
+            OnErrorDTO onErrorDTO = new();
+            onErrorDTO.message = "유효하지 않은 핸드 ID입니다.";
+            string onErrorJson = Newtonsoft.Json.JsonConvert.SerializeObject(onErrorDTO);
+            await Clients.Caller.SendAsync("ReceiveCommand", "OnError", onErrorJson);
             return;
         }
 
         var hand = player.GetHandById(guid);
         if (hand == null)
         {
-            await Clients.Caller.SendAsync("OnError", "해당 핸드를 찾을 수 없습니다.");
+            OnErrorDTO onErrorDTO = new();
+            onErrorDTO.message = "해당 핸드를 찾을 수 없습니다.";
+            string onErrorJson = Newtonsoft.Json.JsonConvert.SerializeObject(onErrorDTO);
+            await Clients.Caller.SendAsync("ReceiveCommand", "OnError", onErrorJson);
             return;
         }
 
@@ -342,6 +468,10 @@ public class BlackjackHub : Hub
     public async Task LeaveGame(string gameId)
     {
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, gameId);
-        await Clients.Group(gameId).SendAsync("UserLeft", Context.ConnectionId);
+
+        UserLeftDTO userLeftDTO = new();
+        userLeftDTO.connectionId = Context.ConnectionId;
+        string userLeftJson = Newtonsoft.Json.JsonConvert.SerializeObject(userLeftDTO);
+        await Clients.Group(gameId).SendAsync("ReceiveCommand", "UserLeft", userLeftJson);
     }
 }

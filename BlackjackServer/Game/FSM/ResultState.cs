@@ -1,3 +1,5 @@
+using System.Linq.Expressions;
+
 public enum E_EvaluationResult
 {
     Win,
@@ -45,23 +47,26 @@ public class ResultState : IGameState
             {
                 E_EvaluationResult result = EvaluateHand(hand, _gameRoom.Dealer.Hand);
 
-                _ = _gameRoom.SendToAll("OnHandEvaluation", new
-                {
-                    playerGuid = player.Guid.ToString(),
-                    playerName = player.DisplayName,
-                    handId = hand.HandId.ToString(),
-                    evaluationResult = result.ToString()
-                });
+                OnHandEvaluationDTO onHandEvaluationDTO = new();
+                onHandEvaluationDTO.playerGuid = player.Guid.ToString();
+                onHandEvaluationDTO.playerName = player.DisplayName;
+                onHandEvaluationDTO.handId = hand.HandId.ToString();
+                onHandEvaluationDTO.evaluationResult = result.ToString();
+                string onHandEvaluationJson = Newtonsoft.Json.JsonConvert.SerializeObject(onHandEvaluationDTO);
+                _ = _gameRoom.SendToAll("OnHandEvaluation", onHandEvaluationJson);
 
                 ApplyPayout(player, hand, result);
 
-                _ = _gameRoom.SendToPlayer(player, "OnPayout", new
-                {
-                    handId = hand.HandId,
-                    evaluationResult = result.ToString()
-                });
+                OnPayoutDTO onPayoutDTO = new();
+                onPayoutDTO.handId = hand.HandId.ToString();
+                onPayoutDTO.evaluationResult = result.ToString();
+                string onPayoutJson = Newtonsoft.Json.JsonConvert.SerializeObject(onPayoutDTO);
+                _ = _gameRoom.SendToPlayer(player, "OnPayout", onPayoutJson);
 
-                _ = _gameRoom.SendToPlayer(player, "OnPlayerRemainChips", player.Chips.ToString());
+                OnPlayerRemainChipsDTO onPlayerRemainChipsDTO = new();
+                onPlayerRemainChipsDTO.chips = player.Chips.ToString();
+                string onPlayerRemainChipsJson = Newtonsoft.Json.JsonConvert.SerializeObject(onPlayerRemainChipsDTO);
+                _ = _gameRoom.SendToPlayer(player, "OnPlayerRemainChips", onPlayerRemainChipsJson);
             }
         }
     }

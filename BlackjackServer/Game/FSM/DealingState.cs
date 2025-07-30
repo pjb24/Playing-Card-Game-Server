@@ -41,23 +41,25 @@ public class DealingState : IGameState
             {
                 var card = _gameRoom.Deck.DrawCard();
                 hand.AddCard(card);
-                _ = _gameRoom.SendToAll("OnCardDealt", new
-                {
-                    playerGuid = player.Guid.ToString(),
-                    playerName = player.DisplayName,
-                    cardString = card.ToString(),
-                    handId = hand.HandId
-                });
+
+                OnCardDealtDTO onCardDealtDTO = new();
+                onCardDealtDTO.playerGuid = player.Guid.ToString();
+                onCardDealtDTO.playerName = player.DisplayName;
+                onCardDealtDTO.cardString = card.ToString();
+                onCardDealtDTO.handId = hand.HandId.ToString();
+                string onCardDealtJson = Newtonsoft.Json.JsonConvert.SerializeObject(onCardDealtDTO);
+                _ = _gameRoom.SendToAll("OnCardDealt", onCardDealtJson);
             }
         }
 
         // 딜러에게 첫번째 카드 분배
         var dealerCard1 = _gameRoom.Deck.DrawCard();
         dealer.AddCard(dealerCard1);
-        _ = _gameRoom.SendToAll("OnDealerCardDealt", new
-        {
-            cardString = dealerCard1.ToString()
-        });
+
+        OnDealerCardDealtDTO onDealerCardDealtDTO = new();
+        onDealerCardDealtDTO.cardString = dealerCard1.ToString();
+        string onDealerCardDealtJson = Newtonsoft.Json.JsonConvert.SerializeObject(onDealerCardDealtDTO);
+        _ = _gameRoom.SendToAll("OnDealerCardDealt", onDealerCardDealtJson);
 
         // 플레이어들에게 두번째 카드를 분배
         foreach (var player in players)
@@ -66,19 +68,23 @@ public class DealingState : IGameState
             {
                 var card = _gameRoom.Deck.DrawCard();
                 hand.AddCard(card);
-                _ = _gameRoom.SendToAll("OnCardDealt", new
-                {
-                    playerGuid = player.Guid.ToString(),
-                    playerName = player.DisplayName,
-                    cardString = card.ToString(),
-                    handId = hand.HandId.ToString()
-                });
+
+                OnCardDealtDTO onCardDealtDTO = new();
+                onCardDealtDTO.playerGuid = player.Guid.ToString();
+                onCardDealtDTO.playerName = player.DisplayName;
+                onCardDealtDTO.cardString = card.ToString();
+                onCardDealtDTO.handId = hand.HandId.ToString();
+                string onCardDealtJson = Newtonsoft.Json.JsonConvert.SerializeObject(onCardDealtDTO);
+                _ = _gameRoom.SendToAll("OnCardDealt", onCardDealtJson);
             }
         }
 
         // 딜러에게 두번째 카드 분배
         var dealerCard2 = _gameRoom.Deck.DrawCard();
         dealer.AddCard(dealerCard2);
-        _ = _gameRoom.SendToAll("OnDealerHiddenCardDealt", new { });
+
+        OnDealerHiddenCardDealtDTO onDealerHiddenCardDealtDTO = new();
+        string onDealerHiddenCardDealtJson = Newtonsoft.Json.JsonConvert.SerializeObject(onDealerHiddenCardDealtDTO);
+        _ = _gameRoom.SendToAll("OnDealerHiddenCardDealt", onDealerHiddenCardDealtJson);
     }
 }
