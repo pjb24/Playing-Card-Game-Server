@@ -54,7 +54,7 @@
                 .withUrl("/blackjackHub")
                 .configureLogging(signalR.LogLevel.Information)
                 .build();
-            
+
             let currentHandId = null;
             let playerGuid = null;
 
@@ -206,10 +206,13 @@
             async function joinGame() {
                 const name = document.getElementById("userName").value;
                 try {
-                    await connection.start();
-                    log("Connected to server");
-                    await connection.invoke("JoinGame", name);
+                    const payload = {
+                        userName: name
+                    };
+                    const jsonString = JSON.stringify(payload);
+                    await connection.invoke("ExecuteCommand", "JoinGame", jsonString);
                 } catch (err) {
+                    console.log(`Error join game: ${err.toString()}`);
                     log(`Error join game: ${err.toString()}`);
                 }
             }
@@ -220,7 +223,7 @@
                     playerCards.innerHTML = ``;
                     const dealerCards = document.getElementById("dealerCards");
                     dealerCards.innerHTML = ``;
-                    await connection.invoke("StartGame");
+                    await connection.invoke("ExecuteCommand", "StartGame", "");
                 } catch (err) {
                     log(`Error start game: ${err.toString()}`);
                 }
@@ -233,7 +236,12 @@
                     return;
                 }
                 try {
-                    await connection.invoke("PlaceBet", betAmount, currentHandId);
+                    const payload = {
+                        amount: betAmount,
+                        handId: currentHandId
+                    };
+                    const jsonString = JSON.stringify(payload);
+                    await connection.invoke("ExecuteCommand", "PlaceBet", jsonString);
                 } catch (err) {
                     log(`Error place bet: ${err.toString()}`);
                 }
@@ -249,7 +257,11 @@
 
             async function hit() {
                 try {
-                    await connection.invoke("Hit", currentHandId);
+                    const payload = {
+                        handId: currentHandId
+                    }
+                    const jsonString = JSON.stringify(payload);
+                    await connection.invoke("ExecuteCommand", "Hit", jsonString);
                 } catch (err) {
                     log(`Error hit: ${err.toString()}`);
                 }
@@ -257,7 +269,11 @@
 
             async function stand() {
                 try {
-                    await connection.invoke("Stand", currentHandId);
+                    const payload = {
+                        handId: currentHandId
+                    }
+                    const jsonString = JSON.stringify(payload);
+                    await connection.invoke("ExecuteCommand", "Stand", jsonString);
                 } catch (err) {
                     log(`Error stand: ${err.toString()}`);
                 }
@@ -265,7 +281,11 @@
 
             async function split() {
                 try {
-                    await connection.invoke("Split", currentHandId);
+                    const payload = {
+                        handId: currentHandId
+                    }
+                    const jsonString = JSON.stringify(payload);
+                    await connection.invoke("ExecuteCommand", "Split", jsonString);
                 } catch (err) {
                     log(`Error split: ${err.toString()}`);
                 }
@@ -273,7 +293,11 @@
 
             async function doubleDown() {
                 try {
-                    await connection.invoke("DoubleDown", currentHandId);
+                    const payload = {
+                        handId: currentHandId
+                    }
+                    const jsonString = JSON.stringify(payload);
+                    await connection.invoke("ExecuteCommand", "DoubleDown", jsonString);
                 } catch (err) {
                     log(`Error double down: ${err.toString()}`);
                 }
@@ -284,6 +308,10 @@
                 gameStatus.innerHTML += `<p>${message}</p>`;
                 window.scrollTo(0, document.body.scrollHeight);
             }
+
+            connection.start().then(() => {
+                log("Connected to server");
+            });
         </script>
     </body>
 </html>

@@ -1,5 +1,7 @@
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
 
+// Server To Client DTO
+
 public class WelcomeDTO
 {
     public string message { get; set; }
@@ -121,5 +123,52 @@ public class OnHandEvaluationDTO
     public string handId { get; set; }
     public string evaluationResult { get; set; }
 }
+
+// Server To Client DTO
+
+
+// Client To Server DTO
+
+public class JoinGameDTO
+{
+    public string userName { get; set; }
+}
+
+public class StartGameDTO
+{
+}
+
+public class PlaceBetDTO
+{
+    public int amount { get; set; }
+    public string handId { get; set; }
+}
+
+public class HitDTO
+{
+    public string handId { get; set; }
+}
+
+public class StandDTO
+{
+    public string handId { get; set; }
+}
+
+public class SplitDTO
+{
+    public string handId { get; set; }
+}
+
+public class DoubleDownDTO
+{
+    public string handId { get; set; }
+}
+
+public class LeaveGameDTO
+{
+    public string gameId { get; set; }
+}
+
+// Client To Server DTO
 
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
