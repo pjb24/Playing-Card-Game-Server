@@ -39,7 +39,7 @@ public class Deck
                 deck.Add(new Card(suit, rank));
             }
         }
-        
+
         return deck;
     }
 
@@ -69,5 +69,13 @@ public class Deck
         _shoe.RemoveAt(0);
 
         return card;
+    }
+
+    public void PrepareNextRound()
+    {
+        if (IsShuffleNeeded)
+        {
+            InitializeDeck();
+        }
     }
 }

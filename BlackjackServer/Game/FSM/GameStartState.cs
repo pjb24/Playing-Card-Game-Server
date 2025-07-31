@@ -31,6 +31,8 @@ public class GameStartState : IGameState
             }
         }
 
+        _gameRoom.Deck.PrepareNextRound();
+
         _gameRoom.ChangeState(new BettingState(_gameRoom));
     }
 
