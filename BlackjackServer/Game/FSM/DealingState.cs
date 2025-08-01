@@ -45,7 +45,8 @@ public class DealingState : IGameState
                 OnCardDealtDTO onCardDealtDTO = new();
                 onCardDealtDTO.playerGuid = player.Guid.ToString();
                 onCardDealtDTO.playerName = player.DisplayName;
-                onCardDealtDTO.cardString = card.ToString();
+                onCardDealtDTO.cardRank = card.GetRank();
+                onCardDealtDTO.cardSuit = card.GetSuit();
                 onCardDealtDTO.handId = hand.HandId.ToString();
                 string onCardDealtJson = Newtonsoft.Json.JsonConvert.SerializeObject(onCardDealtDTO);
                 _ = _gameRoom.SendToAll("OnCardDealt", onCardDealtJson);
@@ -57,7 +58,8 @@ public class DealingState : IGameState
         dealer.AddCard(dealerCard1);
 
         OnDealerCardDealtDTO onDealerCardDealtDTO = new();
-        onDealerCardDealtDTO.cardString = dealerCard1.ToString();
+        onDealerCardDealtDTO.cardRank = dealerCard1.GetRank();
+        onDealerCardDealtDTO.cardSuit = dealerCard1.GetSuit();
         string onDealerCardDealtJson = Newtonsoft.Json.JsonConvert.SerializeObject(onDealerCardDealtDTO);
         _ = _gameRoom.SendToAll("OnDealerCardDealt", onDealerCardDealtJson);
 
@@ -72,7 +74,8 @@ public class DealingState : IGameState
                 OnCardDealtDTO onCardDealtDTO = new();
                 onCardDealtDTO.playerGuid = player.Guid.ToString();
                 onCardDealtDTO.playerName = player.DisplayName;
-                onCardDealtDTO.cardString = card.ToString();
+                onCardDealtDTO.cardRank = card.GetRank();
+                onCardDealtDTO.cardSuit = card.GetSuit();
                 onCardDealtDTO.handId = hand.HandId.ToString();
                 string onCardDealtJson = Newtonsoft.Json.JsonConvert.SerializeObject(onCardDealtDTO);
                 _ = _gameRoom.SendToAll("OnCardDealt", onCardDealtJson);

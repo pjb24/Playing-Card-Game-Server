@@ -55,6 +55,7 @@ public class JoinGameCommandHandler : ICommandHandler<JoinGameDTO>
         await _hubContext.Clients.AllExcept(context.ConnectionId).SendAsync("ReceiveCommand", "OnUserJoined", onUserJoinedJson);
 
         OnPlayerRemainChipsDTO onPlayerRemainChipsDTO = new();
+        onPlayerRemainChipsDTO.playerGuid = player.Guid.ToString();
         onPlayerRemainChipsDTO.chips = player.Chips.ToString();
         string onPlayerRemainChipsJson = Newtonsoft.Json.JsonConvert.SerializeObject(onPlayerRemainChipsDTO);
         await _hubContext.Clients.Client(context.ConnectionId).SendAsync("ReceiveCommand", "OnPlayerRemainChips", onPlayerRemainChipsJson);

@@ -17,6 +17,12 @@ public class GameEndState : IGameState
             player.ClearHand();
             player.SetAllHandDoneReset();
         }
+
+        _gameRoom.Dealer.ResetHand();
+
+        OnGameEndDTO onGameEndDTO = new();
+        string onGameEndJson = Newtonsoft.Json.JsonConvert.SerializeObject(onGameEndDTO);
+        _ = _gameRoom.SendToAll("OnGameEnd", onGameEndJson);
     }
 
     public void Exit()

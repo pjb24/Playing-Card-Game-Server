@@ -42,7 +42,8 @@ public class PlayerTurnState : IGameState
             OnCardDealtDTO onCardDealtDTO = new();
             onCardDealtDTO.playerGuid = _currentPlayer.Guid.ToString();
             onCardDealtDTO.playerName = _currentPlayer.DisplayName;
-            onCardDealtDTO.cardString = card.ToString();
+            onCardDealtDTO.cardRank = card.GetRank();
+            onCardDealtDTO.cardSuit = card.GetSuit();
             onCardDealtDTO.handId = _currentHand.HandId.ToString();
             string onCardDealtJson = Newtonsoft.Json.JsonConvert.SerializeObject(onCardDealtDTO);
             _ = _gameRoom.SendToAll("OnCardDealt", onCardDealtJson);

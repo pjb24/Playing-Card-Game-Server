@@ -47,23 +47,17 @@ public class ResultState : IGameState
             {
                 E_EvaluationResult result = EvaluateHand(hand, _gameRoom.Dealer.Hand);
 
-                OnHandEvaluationDTO onHandEvaluationDTO = new();
-                onHandEvaluationDTO.playerGuid = player.Guid.ToString();
-                onHandEvaluationDTO.playerName = player.DisplayName;
-                onHandEvaluationDTO.handId = hand.HandId.ToString();
-                onHandEvaluationDTO.evaluationResult = result.ToString();
-                string onHandEvaluationJson = Newtonsoft.Json.JsonConvert.SerializeObject(onHandEvaluationDTO);
-                _ = _gameRoom.SendToAll("OnHandEvaluation", onHandEvaluationJson);
-
                 ApplyPayout(player, hand, result);
 
                 OnPayoutDTO onPayoutDTO = new();
+                onPayoutDTO.playerGuid = player.Guid.ToString();
                 onPayoutDTO.handId = hand.HandId.ToString();
-                onPayoutDTO.evaluationResult = result.ToString();
+                onPayoutDTO.evaluationResult = result;
                 string onPayoutJson = Newtonsoft.Json.JsonConvert.SerializeObject(onPayoutDTO);
                 _ = _gameRoom.SendToPlayer(player, "OnPayout", onPayoutJson);
 
                 OnPlayerRemainChipsDTO onPlayerRemainChipsDTO = new();
+                onPlayerRemainChipsDTO.playerGuid = player.Guid.ToString();
                 onPlayerRemainChipsDTO.chips = player.Chips.ToString();
                 string onPlayerRemainChipsJson = Newtonsoft.Json.JsonConvert.SerializeObject(onPlayerRemainChipsDTO);
                 _ = _gameRoom.SendToPlayer(player, "OnPlayerRemainChips", onPlayerRemainChipsJson);

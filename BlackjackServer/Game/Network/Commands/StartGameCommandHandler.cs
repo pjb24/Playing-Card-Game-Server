@@ -46,10 +46,5 @@ public class StartGameCommandHandler : ICommandHandler<StartGameDTO>
         }
 
         room.StartGame();
-
-        OnGameStateChangedDTO onGameStateChangedDTO = new();
-        onGameStateChangedDTO.state = room.CurrentState;
-        string onGameStateChangedJson = Newtonsoft.Json.JsonConvert.SerializeObject(onGameStateChangedDTO);
-        await _hubContext.Clients.Group(room.RoomId).SendAsync("ReceiveCommand", "OnGameStateChanged", onGameStateChangedJson);
     }
 }

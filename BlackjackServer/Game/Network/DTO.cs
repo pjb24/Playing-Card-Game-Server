@@ -35,6 +35,7 @@ public class OnUserJoinedDTO
 
 public class OnPlayerRemainChipsDTO
 {
+    public string playerGuid { get; set; }
     public string chips { get; set; }
 }
 
@@ -45,6 +46,7 @@ public class OnGameStateChangedDTO
 
 public class OnBetPlacedDTO
 {
+    public string playerGuid { get; set; }
     public string playerName { get; set; }
     public int betAmount { get; set; }
     public string handId { get; set; }
@@ -57,20 +59,23 @@ public class UserLeftDTO
 
 public class OnTimeToBettingDTO
 {
+    public string playerGuid { get; set; }
     public string handId { get; set; }
 }
 
 public class OnPayoutDTO
 {
+    public string playerGuid { get; set; }
     public string handId { get; set; }
-    public string evaluationResult { get; set; }
+    public E_EvaluationResult evaluationResult { get; set; }
 }
 
 public class OnCardDealtDTO
 {
     public string playerGuid { get; set; }
     public string playerName { get; set; }
-    public string cardString { get; set; }
+    public E_CardRank cardRank { get; set; }
+    public E_CardSuit cardSuit { get; set; }
     public string handId { get; set; }
 }
 
@@ -90,6 +95,7 @@ public class OnActionDoneDTO
 
 public class OnHandSplitDTO
 {
+    public string playerGuid { get; set; }
     public string playerName { get; set; }
     public string handId { get; set; }
     public string newHandId { get; set; }
@@ -97,12 +103,14 @@ public class OnHandSplitDTO
 
 public class OnDealerHoleCardRevealedDTO
 {
-    public string cardString { get; set; }
+    public E_CardRank cardRank { get; set; }
+    public E_CardSuit cardSuit { get; set; }
 }
 
 public class OnDealerCardDealtDTO
 {
-    public string cardString { get; set; }
+    public E_CardRank cardRank { get; set; }
+    public E_CardSuit cardSuit { get; set; }
 }
 
 public class OnDealerHiddenCardDealtDTO
@@ -116,12 +124,14 @@ public class OnTimeToActionDTO
     public string playerName { get; set; }
 }
 
-public class OnHandEvaluationDTO
+public class OnAddHandToPlayerDTO
 {
     public string playerGuid { get; set; }
-    public string playerName { get; set; }
     public string handId { get; set; }
-    public string evaluationResult { get; set; }
+}
+
+public class OnGameEndDTO
+{
 }
 
 // Server To Client DTO

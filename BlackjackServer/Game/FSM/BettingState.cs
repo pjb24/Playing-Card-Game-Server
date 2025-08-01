@@ -36,6 +36,7 @@ public class BettingState : IGameState
 
         // 현재 플레이어의 핸드에 대해 베팅을 대기중임을 Client에 알림
         OnTimeToBettingDTO onTimeToBettingDTO = new();
+        onTimeToBettingDTO.playerGuid = currentPlayer.Guid.ToString();
         onTimeToBettingDTO.handId = currentHand.HandId.ToString();
         string onTimeToBettingJson = Newtonsoft.Json.JsonConvert.SerializeObject(onTimeToBettingDTO);
         _ = _gameRoom.SendToPlayer(currentPlayer, "OnTimeToBetting", onTimeToBettingJson);

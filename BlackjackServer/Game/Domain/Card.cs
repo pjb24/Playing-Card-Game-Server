@@ -57,4 +57,14 @@ public class Card
     {
         return $"{_rank} of {_suit}";
     }
+
+    public E_CardRank GetRank()
+    {
+        return _rank;
+    }
+
+    public E_CardSuit GetSuit()
+    {
+        return _suit;
+    }
 }

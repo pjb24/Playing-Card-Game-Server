@@ -155,7 +155,8 @@ public class GameRoom
         OnCardDealtDTO onCardDealtDTO = new();
         onCardDealtDTO.playerGuid = player.Guid.ToString();
         onCardDealtDTO.playerName = player.DisplayName;
-        onCardDealtDTO.cardString = card.ToString();
+        onCardDealtDTO.cardRank = card.GetRank();
+        onCardDealtDTO.cardSuit = card.GetSuit();
         onCardDealtDTO.handId = hand.HandId.ToString();
         string onCardDealtJson = Newtonsoft.Json.JsonConvert.SerializeObject(onCardDealtDTO);
         _ = SendToAll("OnCardDealt", onCardDealtJson);
@@ -235,6 +236,7 @@ public class GameRoom
         PlayerHand newHand = player.InsertHand(index + 1);
 
         OnHandSplitDTO onHandSplitDTO = new();
+        onHandSplitDTO.playerGuid = player.Guid.ToString();
         onHandSplitDTO.playerName = player.DisplayName;
         onHandSplitDTO.handId = hand.HandId.ToString();
         onHandSplitDTO.newHandId = newHand.HandId.ToString();
@@ -245,6 +247,7 @@ public class GameRoom
         player.PlaceBet(hand.BetAmount, newHand);
 
         OnBetPlacedDTO onBetPlacedDTO = new();
+        onBetPlacedDTO.playerGuid = player.Guid.ToString();
         onBetPlacedDTO.playerName = player.DisplayName;
         onBetPlacedDTO.betAmount = hand.BetAmount;
         onBetPlacedDTO.handId = newHand.HandId.ToString();
@@ -301,7 +304,8 @@ public class GameRoom
         OnCardDealtDTO onCardDealtDTO = new();
         onCardDealtDTO.playerGuid = player.Guid.ToString();
         onCardDealtDTO.playerName = player.DisplayName;
-        onCardDealtDTO.cardString = card.ToString();
+        onCardDealtDTO.cardRank = card.GetRank();
+        onCardDealtDTO.cardSuit = card.GetSuit();
         onCardDealtDTO.handId = hand.HandId.ToString();
         string onCardDealtJson = Newtonsoft.Json.JsonConvert.SerializeObject(onCardDealtDTO);
         _ = SendToAll("OnCardDealt", onCardDealtJson);
@@ -351,7 +355,8 @@ public class GameRoom
         else
         {
             OnDealerHoleCardRevealedDTO onDealerHoleCardRevealedDTO = new();
-            onDealerHoleCardRevealedDTO.cardString = dealerHiddenCard.ToString();
+            onDealerHoleCardRevealedDTO.cardRank = dealerHiddenCard.GetRank();
+            onDealerHoleCardRevealedDTO.cardSuit = dealerHiddenCard.GetSuit();
             string onDealerHoleCardRevealedJson = Newtonsoft.Json.JsonConvert.SerializeObject(onDealerHoleCardRevealedDTO);
             _ = SendToAll("OnDealerHoleCardRevealed", onDealerHoleCardRevealedJson);
         }

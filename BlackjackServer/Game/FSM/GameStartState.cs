@@ -27,7 +27,14 @@ public class GameStartState : IGameState
         {
             if (player.Hands.Count == 0)
             {
-                player.AddHand(new PlayerHand());
+                PlayerHand hand = new();
+                player.AddHand(hand);
+
+                OnAddHandToPlayerDTO onAddHandToPlayerDTO = new();
+                onAddHandToPlayerDTO.playerGuid = player.Guid.ToString();
+                onAddHandToPlayerDTO.handId = hand.HandId.ToString();
+                string onAddHandToPlayerJson = Newtonsoft.Json.JsonConvert.SerializeObject(onAddHandToPlayerDTO);
+                _ = _gameRoom.SendToPlayer(player, "OnAddHandToPlayer", onAddHandToPlayerJson);
             }
         }
 

@@ -41,7 +41,8 @@ public class DealerTurnState : IGameState
             dealer.AddCard(card);
 
             OnDealerCardDealtDTO onDealerCardDealtDTO = new();
-            onDealerCardDealtDTO.cardString = card.ToString();
+            onDealerCardDealtDTO.cardRank = card.GetRank();
+            onDealerCardDealtDTO.cardSuit = card.GetSuit();
             string onDealerCardDealtJson = Newtonsoft.Json.JsonConvert.SerializeObject(onDealerCardDealtDTO);
             _ = _gameRoom.SendToAll("OnDealerCardDealt", onDealerCardDealtJson);
         }
