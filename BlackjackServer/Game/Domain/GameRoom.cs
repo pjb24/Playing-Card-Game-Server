@@ -291,6 +291,7 @@ public class GameRoom
         player.DoubleDown(hand);
 
         OnBetPlacedDTO onBetPlacedDTO = new();
+        onBetPlacedDTO.playerGuid = player.Guid.ToString();
         onBetPlacedDTO.playerName = player.DisplayName;
         onBetPlacedDTO.betAmount = hand.BetAmount;
         onBetPlacedDTO.handId = hand.HandId.ToString();

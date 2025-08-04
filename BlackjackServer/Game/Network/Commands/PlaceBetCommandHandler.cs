@@ -79,6 +79,7 @@ public class PlaceBetCommandHandler : ICommandHandler<PlaceBetDTO>
         if (success)
         {
             OnBetPlacedDTO onBetPlacedDTO = new();
+            onBetPlacedDTO.playerGuid = player.Guid.ToString();
             onBetPlacedDTO.playerName = player.DisplayName;
             onBetPlacedDTO.betAmount = command.amount;
             onBetPlacedDTO.handId = currentHand.HandId.ToString();
