@@ -19,6 +19,9 @@ public class Player
     private bool _isAllHandActionDone = false;
     public bool IsAllHandActionDone => _isAllHandActionDone;
 
+    private bool _isReadyToResult = false;
+    public bool IsReadyToResult => _isReadyToResult;
+
     public Player(string id, string displayName, int initialChips)
     {
         _id = id;
@@ -129,5 +132,15 @@ public class Player
     {
         int payout = (int)(hand.BetAmount * 2.5f);
         _chips += payout;
+    }
+
+    public void SetPlayerReadyToResult()
+    {
+        _isReadyToResult = true;
+    }
+
+    public void ResetPlayerReadyToResult()
+    {
+        _isReadyToResult = false;
     }
 }

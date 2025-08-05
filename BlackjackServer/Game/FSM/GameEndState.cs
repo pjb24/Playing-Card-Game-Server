@@ -16,6 +16,7 @@ public class GameEndState : IGameState
         {
             player.ClearHand();
             player.SetAllHandDoneReset();
+            player.ResetPlayerReadyToResult();
         }
 
         _gameRoom.Dealer.ResetHand();

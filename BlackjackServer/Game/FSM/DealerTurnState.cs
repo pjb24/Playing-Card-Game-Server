@@ -13,8 +13,6 @@ public class DealerTurnState : IGameState
         // 필요한 초기화 작업을 수행할 수 있습니다.
 
         DealerBehavior();
-
-        _gameRoom.ChangeState(new ResultState(_gameRoom));
     }
 
     public void Exit()
@@ -46,5 +44,9 @@ public class DealerTurnState : IGameState
             string onDealerCardDealtJson = Newtonsoft.Json.JsonConvert.SerializeObject(onDealerCardDealtDTO);
             _ = _gameRoom.SendToAll("OnDealerCardDealt", onDealerCardDealtJson);
         }
+
+        OnDealerCardDealtCompleteDTO onDealerCardDealtCompleteDTO = new();
+        string onDealerCardDealtCompleteJson = Newtonsoft.Json.JsonConvert.SerializeObject(onDealerCardDealtCompleteDTO);
+        _ = _gameRoom.SendToAll("OnDealerCardDealtComplete", onDealerCardDealtCompleteJson);
     }
 }

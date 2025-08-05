@@ -362,4 +362,14 @@ public class GameRoom
             _ = SendToAll("OnDealerHoleCardRevealed", onDealerHoleCardRevealedJson);
         }
     }
+
+    public void SetPlayerReadyToResult(Player player)
+    {
+        player.SetPlayerReadyToResult();
+    }
+
+    public bool CheckAllPlayerReadyToResult()
+    {
+        return PlayersInGame.All(p => p.IsReadyToResult == true);
+    }
 }

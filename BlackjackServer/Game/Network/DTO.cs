@@ -134,6 +134,11 @@ public class OnGameEndDTO
 {
 }
 
+public class OnDealerCardDealtCompleteDTO
+{
+    
+}
+
 // Server To Client DTO
 
 
@@ -177,6 +182,11 @@ public class DoubleDownDTO
 public class LeaveGameDTO
 {
     public string gameId { get; set; }
+}
+
+public class DealerBehaviorDoneDTO
+{
+    public string playerGuid { get; set; }
 }
 
 // Client To Server DTO
