@@ -2,6 +2,8 @@
 
 // Server To Client DTO
 
+using System.Collections.Generic;
+
 public class WelcomeDTO
 {
     public string message { get; set; }
@@ -22,6 +24,17 @@ public class OnErrorDTO
     public string message { get; set; }
 }
 
+public class PlayerInfoDTO
+{
+    public string playerGuid { get; set; }
+    public string userName { get; set; }
+}
+
+public class OnExistingPlayerListDTO
+{
+    public List<PlayerInfoDTO> players { get; set; }
+}
+
 public class OnJoinSuccessDTO
 {
     public string userName { get; set; }
@@ -31,6 +44,7 @@ public class OnJoinSuccessDTO
 public class OnUserJoinedDTO
 {
     public string userName { get; set; }
+    public string playerGuid { get; set; }
 }
 
 public class OnPlayerRemainChipsDTO
@@ -59,8 +73,7 @@ public class UserLeftDTO
 
 public class OnTimeToBettingDTO
 {
-    public string playerGuid { get; set; }
-    public string handId { get; set; }
+
 }
 
 public class OnPayoutDTO
@@ -136,7 +149,12 @@ public class OnGameEndDTO
 
 public class OnDealerCardDealtCompleteDTO
 {
-    
+
+}
+
+public class OnGrantRoomMasterDTO
+{
+
 }
 
 // Server To Client DTO
@@ -187,6 +205,11 @@ public class LeaveGameDTO
 public class DealerBehaviorDoneDTO
 {
     public string playerGuid { get; set; }
+}
+
+public class ReadyToNextRoundDTO
+{
+
 }
 
 // Client To Server DTO

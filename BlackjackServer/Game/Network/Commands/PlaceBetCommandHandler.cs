@@ -90,7 +90,12 @@ public class PlaceBetCommandHandler : ICommandHandler<PlaceBetDTO>
             onPlayerRemainChipsDTO.playerGuid = player.Guid.ToString();
             onPlayerRemainChipsDTO.chips = player.Chips.ToString();
             string onPlayerRemainChipsJson = Newtonsoft.Json.JsonConvert.SerializeObject(onPlayerRemainChipsDTO);
-            await _hubContext.Clients.Client(context.ConnectionId).SendAsync("ReceiveCommand", "OnPlayerRemainChips", onPlayerRemainChipsJson);
+            await _hubContext.Clients.Group(room.RoomId).SendAsync("ReceiveCommand", "OnPlayerRemainChips", onPlayerRemainChipsJson);
+
+            if (room.CheckAllPlayerBettingDone())
+            {
+                room.ChangeState(new DealingState(room));
+            }
         }
         else
         {

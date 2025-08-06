@@ -85,6 +85,7 @@ public class BlackjackHub : Hub
         _commandDispatcher.Register<DoubleDownDTO>("DoubleDown", new DoubleDownCommandHandler(_hubContext, _userManager, _gameRoomManager));
         _commandDispatcher.Register<LeaveGameDTO>("LeaveGame", new LeaveGameCommandHandler(_hubContext));
         _commandDispatcher.Register<DealerBehaviorDoneDTO>("DealerBehaviorDone", new DealerBehaviorDoneCommandHandler(_hubContext, _userManager, _gameRoomManager));
+        _commandDispatcher.Register<ReadyToNextRoundDTO>("ReadyToNextRound", new ReadyToNextRoundCommandHandler(_hubContext, _userManager, _gameRoomManager));
     }
 
     public async Task ExecuteCommand(string command, string payload)

@@ -110,6 +110,11 @@ public class GameRoom
         return _playersInGame.FirstOrDefault(player => !player.IsAllHandActionDone);
     }
 
+    public bool CheckAllPlayerBettingDone()
+    {
+        return _playersInGame.All(p => p.IsAllHandBettingDone == true);
+    }
+
     public void StartGame()
     {
         _fsm.ChangeState(new GameStartState(this));
@@ -132,8 +137,6 @@ public class GameRoom
         }
 
         player.PlaceBet(amount, currentHand);
-
-        _fsm.ChangeState(new BettingState(this));
 
         return true;
     }

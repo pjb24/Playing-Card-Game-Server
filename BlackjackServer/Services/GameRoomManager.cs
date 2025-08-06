@@ -4,11 +4,16 @@ public class GameRoomManager
 {
     private readonly Dictionary<string, GameRoom> _gameRooms = new();
 
-    public void CreateRoom(string roomId, IHubContext<BlackjackHub> hubContext, UserManager userManager)
+    public bool CreateRoom(string roomId, IHubContext<BlackjackHub> hubContext, UserManager userManager)
     {
         if (!_gameRooms.ContainsKey(roomId))
         {
             _gameRooms[roomId] = new GameRoom(roomId, hubContext, userManager);
+            return true;
+        }
+        else
+        {
+            return false;
         }
     }
 

@@ -22,11 +22,32 @@ public class Player
     private bool _isReadyToResult = false;
     public bool IsReadyToResult => _isReadyToResult;
 
+    private bool _isRoomMaster = false;
+    public bool IsRoomMaster => _isRoomMaster;
+
+    private bool _isReadyToNextRound = false;
+    public bool IsReadyToNextRound => _isReadyToNextRound;
+
     public Player(string id, string displayName, int initialChips)
     {
         _id = id;
         _displayName = displayName;
         _chips = initialChips;
+    }
+
+    public void GrantRoomMaster()
+    {
+        _isRoomMaster = true;
+    }
+
+    public void SetReadyToNextRound()
+    {
+        _isReadyToNextRound = true;
+    }
+
+    public void ResetReadyToNextRound()
+    {
+        _isReadyToNextRound = false;
     }
 
     public void AddHand(PlayerHand hand)
@@ -95,7 +116,17 @@ public class Player
         hand.PlaceBet(amount);
         _chips -= amount;
 
+        if (CheckAllHandBettingDone())
+        {
+            SetAllHandBettingDone();
+        }
+
         return true;
+    }
+
+    private bool CheckAllHandBettingDone()
+    {
+        return Hands.All(h => h.IsBettingDone == true);
     }
 
     public bool DoubleDown(PlayerHand hand)

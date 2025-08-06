@@ -34,7 +34,7 @@ public class GameStartState : IGameState
                 onAddHandToPlayerDTO.playerGuid = player.Guid.ToString();
                 onAddHandToPlayerDTO.handId = hand.HandId.ToString();
                 string onAddHandToPlayerJson = Newtonsoft.Json.JsonConvert.SerializeObject(onAddHandToPlayerDTO);
-                _ = _gameRoom.SendToPlayer(player, "OnAddHandToPlayer", onAddHandToPlayerJson);
+                _ = _gameRoom.SendToAll("OnAddHandToPlayer", onAddHandToPlayerJson);
             }
         }
 
