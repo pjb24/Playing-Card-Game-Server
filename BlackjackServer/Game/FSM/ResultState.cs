@@ -60,7 +60,7 @@ public class ResultState : IGameState
                 onPlayerRemainChipsDTO.playerGuid = player.Guid.ToString();
                 onPlayerRemainChipsDTO.chips = player.Chips.ToString();
                 string onPlayerRemainChipsJson = Newtonsoft.Json.JsonConvert.SerializeObject(onPlayerRemainChipsDTO);
-                _ = _gameRoom.SendToPlayer(player, "OnPlayerRemainChips", onPlayerRemainChipsJson);
+                _ = _gameRoom.SendToAll("OnPlayerRemainChips", onPlayerRemainChipsJson);
             }
         }
     }

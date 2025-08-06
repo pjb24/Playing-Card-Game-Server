@@ -257,6 +257,12 @@ public class GameRoom
         string onBetPlacedJson = Newtonsoft.Json.JsonConvert.SerializeObject(onBetPlacedDTO);
         _ = SendToAll("OnBetPlaced", onBetPlacedJson);
 
+        OnPlayerRemainChipsDTO onPlayerRemainChipsDTO = new();
+        onPlayerRemainChipsDTO.playerGuid = player.Guid.ToString();
+        onPlayerRemainChipsDTO.chips = player.Chips.ToString();
+        string onPlayerRemainChipsJson = Newtonsoft.Json.JsonConvert.SerializeObject(onPlayerRemainChipsDTO);
+        _ = SendToAll("OnPlayerRemainChips", onPlayerRemainChipsJson);
+
         // 현재 핸드의 2번째 카드를 새로운 핸드로 나눔
         var Cards = hand.GetCards();
         var splitCard = Cards.ElementAt(1);
