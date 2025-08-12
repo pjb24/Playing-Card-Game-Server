@@ -76,16 +76,18 @@ public class BlackjackHub : Hub
 
     private void RegisterCommands()
     {
-        _commandDispatcher.Register<JoinGameDTO>("JoinGame", new JoinGameCommandHandler(_hubContext, _userManager, _gameRoomManager));
-        _commandDispatcher.Register<StartGameDTO>("StartGame", new StartGameCommandHandler(_hubContext, _userManager, _gameRoomManager));
-        _commandDispatcher.Register<PlaceBetDTO>("PlaceBet", new PlaceBetCommandHandler(_hubContext, _userManager, _gameRoomManager));
-        _commandDispatcher.Register<HitDTO>("Hit", new HitCommandHandler(_hubContext, _userManager, _gameRoomManager));
-        _commandDispatcher.Register<StandDTO>("Stand", new StandCommandHandler(_hubContext, _userManager, _gameRoomManager));
-        _commandDispatcher.Register<SplitDTO>("Split", new SplitCommandHandler(_hubContext, _userManager, _gameRoomManager));
-        _commandDispatcher.Register<DoubleDownDTO>("DoubleDown", new DoubleDownCommandHandler(_hubContext, _userManager, _gameRoomManager));
-        _commandDispatcher.Register<LeaveGameDTO>("LeaveGame", new LeaveGameCommandHandler(_hubContext));
-        _commandDispatcher.Register<DealerBehaviorDoneDTO>("DealerBehaviorDone", new DealerBehaviorDoneCommandHandler(_hubContext, _userManager, _gameRoomManager));
-        _commandDispatcher.Register<ReadyToNextRoundDTO>("ReadyToNextRound", new ReadyToNextRoundCommandHandler(_hubContext, _userManager, _gameRoomManager));
+        _commandDispatcher.Register("CreateNewRoom", new CreateNewRoomCommandHandler(_hubContext, _userManager, _gameRoomManager));
+        _commandDispatcher.Register("DealerBehaviorDone", new DealerBehaviorDoneCommandHandler(_hubContext, _userManager, _gameRoomManager));
+        _commandDispatcher.Register("DoubleDown", new DoubleDownCommandHandler(_hubContext, _userManager, _gameRoomManager));
+        _commandDispatcher.Register("Hit", new HitCommandHandler(_hubContext, _userManager, _gameRoomManager));
+        _commandDispatcher.Register("JoinLobby", new JoinLobbyCommandHandler(_hubContext, _userManager, _gameRoomManager));
+        _commandDispatcher.Register("JoinRoom", new JoinRoomCommandHandler(_hubContext, _userManager, _gameRoomManager));
+        _commandDispatcher.Register("LeaveGame", new LeaveGameCommandHandler(_hubContext));
+        _commandDispatcher.Register("PlaceBet", new PlaceBetCommandHandler(_hubContext, _userManager, _gameRoomManager));
+        _commandDispatcher.Register("ReadyToNextRound", new ReadyToNextRoundCommandHandler(_hubContext, _userManager, _gameRoomManager));
+        _commandDispatcher.Register("Split", new SplitCommandHandler(_hubContext, _userManager, _gameRoomManager));
+        _commandDispatcher.Register("Stand", new StandCommandHandler(_hubContext, _userManager, _gameRoomManager));
+        _commandDispatcher.Register("StartGame", new StartGameCommandHandler(_hubContext, _userManager, _gameRoomManager));
     }
 
     public async Task ExecuteCommand(string command, string payload)

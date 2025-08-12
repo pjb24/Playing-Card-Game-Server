@@ -15,4 +15,9 @@ public class User
         _connectionId = connectionId;
         _id = id;
     }
+
+    public void SetUserConnectionId(string connectionId)
+    {
+        _connectionId = connectionId;
+    }
 }

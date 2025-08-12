@@ -27,7 +27,7 @@ public class ReadyToNextRoundCommandHandler : ICommandHandler<ReadyToNextRoundDT
             return;
         }
 
-        var player = _userManager.GetPlayer(user.Id);
+        var player = _userManager.GetPlayerByUserId(user.Id);
         if (player == null)
         {
             Console.WriteLine("플레이어를 찾을 수 없습니다.");

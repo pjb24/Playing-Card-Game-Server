@@ -25,7 +25,7 @@ public class SplitCommandHandler : ICommandHandler<SplitDTO>
             return;
         }
 
-        var player = _userManager.GetPlayer(user.Id);
+        var player = _userManager.GetPlayerByUserId(user.Id);
         if (player == null)
         {
             OnErrorDTO onErrorDTO = new();

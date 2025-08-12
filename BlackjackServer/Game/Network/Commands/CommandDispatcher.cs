@@ -17,6 +17,7 @@ public class CommandDispatcher
     {
         if (_handlers.TryGetValue(commandName, out var handler))
         {
+            Console.WriteLine($"[Dispatcher] 명령 수행: {commandName}, ConnectionID: {context.ConnectionId}");
             await handler(payload, context);
         }
         else

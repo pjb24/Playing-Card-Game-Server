@@ -1,13 +1,5 @@
 using System.Linq.Expressions;
 
-public enum E_EvaluationResult
-{
-    Win,
-    Lose,
-    Push,
-    Blackjack,
-}
-
 public class ResultState : IGameState
 {
     private readonly GameRoom _gameRoom;

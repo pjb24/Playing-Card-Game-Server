@@ -1,19 +1,19 @@
 using Microsoft.AspNetCore.SignalR;
 
-public class StartGameCommandHandler : ICommandHandler<StartGameDTO>
+public class CreateNewRoomCommandHandler : ICommandHandler<CreateNewRoomDTO>
 {
-    private readonly IHubContext<BlackjackHub> _hubContext;
+    private IHubContext<BlackjackHub> _hubContext;
     private readonly UserManager _userManager;
     private readonly GameRoomManager _gameRoomManager;
 
-    public StartGameCommandHandler(IHubContext<BlackjackHub> hubContext, UserManager userManager, GameRoomManager gameRoomManager)
+    public CreateNewRoomCommandHandler(IHubContext<BlackjackHub> hubContext, UserManager userManager, GameRoomManager gameRoomManager)
     {
         _hubContext = hubContext;
         _userManager = userManager;
         _gameRoomManager = gameRoomManager;
     }
 
-    public async Task HandleAsync(StartGameDTO command, CommandContext context)
+    public async Task HandleAsync(CreateNewRoomDTO command, CommandContext context)
     {
         var user = _userManager.GetUserByConnectionId(context.ConnectionId);
         if (user == null)
@@ -35,16 +35,18 @@ public class StartGameCommandHandler : ICommandHandler<StartGameDTO>
             return;
         }
 
-        var room = _gameRoomManager.GetRoomByPlayerId(player.Id);
-        if (room == null)
+        bool created = _gameRoomManager.CreateRoom(command.roomName, _hubContext, _userManager);
+        if (created)
         {
-            OnErrorDTO onErrorDTO = new();
-            onErrorDTO.message = "게임 방을 찾을 수 없습니다.";
-            string onErrorJson = Newtonsoft.Json.JsonConvert.SerializeObject(onErrorDTO);
-            await _hubContext.Clients.Client(context.ConnectionId).SendAsync("ReceiveCommand", "OnError", onErrorJson);
-            return;
-        }
+            _gameRoomManager.AddPlayerToRoom(command.roomName, player);
+            await _hubContext.Groups.AddToGroupAsync(context.ConnectionId, command.roomName);
 
-        room.StartGame();
+            OnRoomCreateSuccessDTO onRoomCreateSuccessDTO = new();
+            onRoomCreateSuccessDTO.roomName = command.roomName;
+            string onRoomCreateSuccessJson = Newtonsoft.Json.JsonConvert.SerializeObject(onRoomCreateSuccessDTO);
+            await _hubContext.Clients.Client(context.ConnectionId).SendAsync("ReceiveCommand", "OnRoomCreateSuccess", onRoomCreateSuccessJson);
+
+            player.GrantRoomMaster();
+        }
     }
 }

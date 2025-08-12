@@ -33,7 +33,7 @@ public class GameRoomManager
         }
     }
 
-    public GameRoom? GetRoom(string roomId)
+    public GameRoom? GetRoomByRoomId(string roomId)
     {
         return _gameRooms.TryGetValue(roomId, out var room) ? room : null;
     }

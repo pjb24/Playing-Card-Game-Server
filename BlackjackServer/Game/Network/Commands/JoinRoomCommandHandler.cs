@@ -1,27 +1,21 @@
-using Microsoft.AspNetCore.Components.Endpoints;
 using Microsoft.AspNetCore.SignalR;
 
-public class JoinGameCommandHandler : ICommandHandler<JoinGameDTO>
+public class JoinRoomCommandHandler : ICommandHandler<JoinRoomDTO>
 {
     private readonly IHubContext<BlackjackHub> _hubContext;
     private readonly UserManager _userManager;
     private readonly GameRoomManager _gameRoomManager;
 
-    public JoinGameCommandHandler(IHubContext<BlackjackHub> hubContext, UserManager userManager, GameRoomManager gameRoomManager)
+    public JoinRoomCommandHandler(IHubContext<BlackjackHub> hubContext, UserManager userManager, GameRoomManager gameRoomManager)
     {
         _hubContext = hubContext;
         _userManager = userManager;
         _gameRoomManager = gameRoomManager;
     }
 
-    public async Task HandleAsync(JoinGameDTO command, CommandContext context)
+    public async Task HandleAsync(JoinRoomDTO command, CommandContext context)
     {
-        var user = new User(command.userName, context.ConnectionId, command.userName);
-        _userManager.AddUser(user);
-
-        bool created = _gameRoomManager.CreateRoom("defaultRoom", _hubContext, _userManager);
-
-        user = _userManager.GetUserByConnectionId(context.ConnectionId);
+        var user = _userManager.GetUserByUserId(command.userId);
         if (user == null)
         {
             OnErrorDTO onErrorDTO = new();
@@ -31,7 +25,7 @@ public class JoinGameCommandHandler : ICommandHandler<JoinGameDTO>
             return;
         }
 
-        var player = _userManager.GetPlayer(user.Id);
+        var player = _userManager.GetPlayerByUserId(user.Id);
         if (player == null)
         {
             OnErrorDTO onErrorDTO = new();
@@ -41,10 +35,10 @@ public class JoinGameCommandHandler : ICommandHandler<JoinGameDTO>
             return;
         }
 
-        _gameRoomManager.AddPlayerToRoom("defaultRoom", player);
-        await _hubContext.Groups.AddToGroupAsync(context.ConnectionId, "defaultRoom");
+        _gameRoomManager.AddPlayerToRoom(command.roomName, player);
+        await _hubContext.Groups.AddToGroupAsync(context.ConnectionId, command.roomName);
 
-        var room = _gameRoomManager.GetRoomByPlayerId(player.Id);
+        var room = _gameRoomManager.GetRoomByRoomId(command.roomName);
         if (room == null)
         {
             OnErrorDTO onErrorDTO = new();
@@ -73,13 +67,20 @@ public class JoinGameCommandHandler : ICommandHandler<JoinGameDTO>
         await _hubContext.Clients.Client(context.ConnectionId).SendAsync("ReceiveCommand", "OnExistingPlayerList", onExistingPlayerListJson);
 
         OnJoinSuccessDTO onJoinSuccessDTO = new();
-        onJoinSuccessDTO.userName = command.userName;
+        onJoinSuccessDTO.userName = user.Name;
         onJoinSuccessDTO.playerGuid = player.Guid.ToString();
         string onJoinSuccessJson = Newtonsoft.Json.JsonConvert.SerializeObject(onJoinSuccessDTO);
         await _hubContext.Clients.Client(context.ConnectionId).SendAsync("ReceiveCommand", "OnJoinSuccess", onJoinSuccessJson);
 
+        if (player.IsRoomMaster)
+        {
+            OnGrantRoomMasterDTO onGrantRoomMasterDTO = new();
+            string onGrantRoomMasterJson = Newtonsoft.Json.JsonConvert.SerializeObject(onGrantRoomMasterDTO);
+            await _hubContext.Clients.Client(context.ConnectionId).SendAsync("ReceiveCommand", "OnGrantRoomMaster", onGrantRoomMasterJson);
+        }
+
         OnUserJoinedDTO onUserJoinedDTO = new();
-        onUserJoinedDTO.userName = command.userName;
+        onUserJoinedDTO.userName = user.Name;
         onUserJoinedDTO.playerGuid = player.Guid.ToString();
         string onUserJoinedJson = Newtonsoft.Json.JsonConvert.SerializeObject(onUserJoinedDTO);
         await _hubContext.Clients.AllExcept(context.ConnectionId).SendAsync("ReceiveCommand", "OnUserJoined", onUserJoinedJson);
@@ -104,15 +105,6 @@ public class JoinGameCommandHandler : ICommandHandler<JoinGameDTO>
             await _hubContext.Clients.Group(room.RoomId).SendAsync("ReceiveCommand", "OnPlayerRemainChips", onPlayerRemainChipsJsonOther);
         }
 
-        if (created)
-        {
-            player.GrantRoomMaster();
-
-            OnGrantRoomMasterDTO onGrantRoomMasterDTO = new();
-            string onGrantRoomMasterJson = Newtonsoft.Json.JsonConvert.SerializeObject(onGrantRoomMasterDTO);
-            await _hubContext.Clients.Client(context.ConnectionId).SendAsync("ReceiveCommand", "OnGrantRoomMaster", onGrantRoomMasterJson);
-        }
-
-        Console.WriteLine($"{command.userName} joined with connection ID: {context.ConnectionId}");
+        Console.WriteLine($"{user.Name} joined with connection ID: {context.ConnectionId}");
     }
 }

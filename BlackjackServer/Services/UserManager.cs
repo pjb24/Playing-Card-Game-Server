@@ -7,9 +7,9 @@ public class UserManager
 
     public void AddUser(User user)
     {
-        if (!_users.ContainsKey(user.ConnectionId))
+        if (!_users.ContainsKey(user.Id))
         {
-            _users[user.ConnectionId] = user;
+            _users[user.Id] = user;
         }
 
         if (!_players.ContainsKey(user.Id))
@@ -26,9 +26,14 @@ public class UserManager
         }
     }
 
+    public User? GetUserByUserId(string userId)
+    {
+        return _users.TryGetValue(userId, out var user) ? user : null;
+    }
+
     public User? GetUserByConnectionId(string connectionId)
     {
-        return _users.TryGetValue(connectionId, out var user) ? user : null;
+        return _users.Values.FirstOrDefault(user => user.ConnectionId == connectionId);
     }
 
     public User? GetUserByPlayerId(string playerId)
@@ -41,8 +46,8 @@ public class UserManager
         return _users.Values;
     }
 
-    public Player? GetPlayer(string id)
+    public Player? GetPlayerByUserId(string userId)
     {
-        return _players.TryGetValue(id, out var player) ? player : null;
+        return _players.TryGetValue(userId, out var player) ? player : null;
     }
 }
