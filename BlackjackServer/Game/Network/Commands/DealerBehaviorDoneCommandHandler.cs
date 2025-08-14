@@ -19,7 +19,7 @@ public class DealerBehaviorDoneCommandHandler : ICommandHandler<DealerBehaviorDo
         if (user == null)
         {
             OnErrorDTO onErrorDTO = new();
-            onErrorDTO.message = "플레이어를 찾을 수 없습니다.";
+            onErrorDTO.message = "유저 데이터를 찾을 수 없습니다.";
             string onErrorJson = Newtonsoft.Json.JsonConvert.SerializeObject(onErrorDTO);
             await _hubContext.Clients.Client(context.ConnectionId).SendAsync("ReceiveCommand", "OnError", onErrorJson);
             return;

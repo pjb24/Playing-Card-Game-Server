@@ -33,7 +33,7 @@ public class ResultState : IGameState
 
     private void EvaluateResults()
     {
-        foreach (var player in _gameRoom.PlayersInGame)
+        foreach (var player in _gameRoom.PlayersInGame.Values)
         {
             foreach (var hand in player.Hands)
             {
@@ -50,7 +50,7 @@ public class ResultState : IGameState
 
                 OnPlayerRemainChipsDTO onPlayerRemainChipsDTO = new();
                 onPlayerRemainChipsDTO.playerGuid = player.Guid.ToString();
-                onPlayerRemainChipsDTO.chips = player.Chips.ToString();
+                onPlayerRemainChipsDTO.chips = player.Chips;
                 string onPlayerRemainChipsJson = Newtonsoft.Json.JsonConvert.SerializeObject(onPlayerRemainChipsDTO);
                 _ = _gameRoom.SendToAll("OnPlayerRemainChips", onPlayerRemainChipsJson);
             }

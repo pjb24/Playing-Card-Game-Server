@@ -31,7 +31,7 @@ public class DealingState : IGameState
 
     private void DealCards()
     {
-        var players = _gameRoom.PlayersInGame;
+        var players = _gameRoom.PlayersInGame.Values;
         var dealer = _gameRoom.Dealer;
 
         // 플레이어들에게 첫번째 카드를 분배

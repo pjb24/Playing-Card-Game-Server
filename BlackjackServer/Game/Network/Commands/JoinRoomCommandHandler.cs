@@ -19,7 +19,7 @@ public class JoinRoomCommandHandler : ICommandHandler<JoinRoomDTO>
         if (user == null)
         {
             OnErrorDTO onErrorDTO = new();
-            onErrorDTO.message = "플레이어를 찾을 수 없습니다.";
+            onErrorDTO.message = "유저 데이터를 찾을 수 없습니다.";
             string onErrorJson = Newtonsoft.Json.JsonConvert.SerializeObject(onErrorDTO);
             await _hubContext.Clients.Client(context.ConnectionId).SendAsync("ReceiveCommand", "OnError", onErrorJson);
             return;
@@ -50,7 +50,7 @@ public class JoinRoomCommandHandler : ICommandHandler<JoinRoomDTO>
 
         OnExistingPlayerListDTO onExistingPlayerListDTO = new();
         List<PlayerInfoDTO> listPlayerInfo = new();
-        foreach (var item in room.PlayersInRoom)
+        foreach (var item in room.PlayersInRoom.Values)
         {
             if (item.Id == player.Id)
             {
@@ -87,11 +87,11 @@ public class JoinRoomCommandHandler : ICommandHandler<JoinRoomDTO>
 
         OnPlayerRemainChipsDTO onPlayerRemainChipsDTO = new();
         onPlayerRemainChipsDTO.playerGuid = player.Guid.ToString();
-        onPlayerRemainChipsDTO.chips = player.Chips.ToString();
+        onPlayerRemainChipsDTO.chips = player.Chips;
         string onPlayerRemainChipsJson = Newtonsoft.Json.JsonConvert.SerializeObject(onPlayerRemainChipsDTO);
         await _hubContext.Clients.Group(room.RoomId).SendAsync("ReceiveCommand", "OnPlayerRemainChips", onPlayerRemainChipsJson);
 
-        foreach (var item in room.PlayersInRoom)
+        foreach (var item in room.PlayersInRoom.Values)
         {
             if (item.Id == player.Id)
             {
@@ -100,7 +100,7 @@ public class JoinRoomCommandHandler : ICommandHandler<JoinRoomDTO>
 
             OnPlayerRemainChipsDTO onPlayerRemainChipsDTOOther = new();
             onPlayerRemainChipsDTOOther.playerGuid = item.Guid.ToString();
-            onPlayerRemainChipsDTOOther.chips = item.Chips.ToString();
+            onPlayerRemainChipsDTOOther.chips = item.Chips;
             string onPlayerRemainChipsJsonOther = Newtonsoft.Json.JsonConvert.SerializeObject(onPlayerRemainChipsDTOOther);
             await _hubContext.Clients.Group(room.RoomId).SendAsync("ReceiveCommand", "OnPlayerRemainChips", onPlayerRemainChipsJsonOther);
         }

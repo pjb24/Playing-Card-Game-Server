@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Microsoft.AspNetCore.SignalR;
 
 public class GameRoom
@@ -5,10 +6,10 @@ public class GameRoom
     private readonly IHubContext<BlackjackHub> _hubContext;
 
     public string RoomId { get; }
-    private List<Player> _playersInRoom = new();
-    public IReadOnlyList<Player> PlayersInRoom => _playersInRoom.AsReadOnly();
-    private List<Player> _playersInGame = new();
-    public IReadOnlyList<Player> PlayersInGame => _playersInGame.AsReadOnly();
+    private ConcurrentDictionary<string, Player> _playersInRoom = new();
+    public IReadOnlyDictionary<string, Player> PlayersInRoom => _playersInRoom.AsReadOnly();
+    private ConcurrentDictionary<string, Player> _playersInGame = new();
+    public IReadOnlyDictionary<string, Player> PlayersInGame => _playersInGame.AsReadOnly();
     private Dealer _dealer = new();
     public Dealer Dealer => _dealer;
 
@@ -65,33 +66,38 @@ public class GameRoom
 
     public void AddPlayerToRoom(Player player)
     {
-        if (!_playersInRoom.Contains(player))
+        if (!_playersInRoom.ContainsKey(player.Id))
         {
-            _playersInRoom.Add(player);
+            _playersInRoom.TryAdd(player.Id, player);
         }
     }
 
     public void RemovePlayerFromRoom(Player player)
     {
-        if (_playersInRoom.Contains(player))
+        if (_playersInRoom.ContainsKey(player.Id))
         {
-            _playersInRoom.Remove(player);
+            _playersInRoom.TryRemove(player.Id, out _);
+        }
+
+        if (_playersInGame.ContainsKey(player.Id))
+        {
+            _playersInGame.TryRemove(player.Id, out _);
         }
     }
 
     public void AddPlayerToGame(Player player)
     {
-        if (!_playersInGame.Contains(player))
+        if (!_playersInGame.ContainsKey(player.Id))
         {
-            _playersInGame.Add(player);
+            _playersInGame.TryAdd(player.Id, player);
         }
     }
 
     public void RemovePlayerFromGame(Player player)
     {
-        if (_playersInGame.Contains(player))
+        if (_playersInGame.ContainsKey(player.Id))
         {
-            _playersInGame.Remove(player);
+            _playersInGame.TryRemove(player.Id, out _);
         }
     }
 
@@ -102,17 +108,17 @@ public class GameRoom
 
     public Player? GetNextBettingPlayer()
     {
-        return _playersInGame.FirstOrDefault(player => !player.IsAllHandBettingDone);
+        return _playersInGame.Values.FirstOrDefault(player => !player.IsAllHandBettingDone);
     }
 
     public Player? GetNextActionPlayer()
     {
-        return _playersInGame.FirstOrDefault(player => !player.IsAllHandActionDone);
+        return _playersInGame.Values.FirstOrDefault(player => !player.IsAllHandActionDone);
     }
 
     public bool CheckAllPlayerBettingDone()
     {
-        return _playersInGame.All(p => p.IsAllHandBettingDone == true);
+        return _playersInGame.Values.All(p => p.IsAllHandBettingDone == true);
     }
 
     public void StartGame()
@@ -259,7 +265,7 @@ public class GameRoom
 
         OnPlayerRemainChipsDTO onPlayerRemainChipsDTO = new();
         onPlayerRemainChipsDTO.playerGuid = player.Guid.ToString();
-        onPlayerRemainChipsDTO.chips = player.Chips.ToString();
+        onPlayerRemainChipsDTO.chips = player.Chips;
         string onPlayerRemainChipsJson = Newtonsoft.Json.JsonConvert.SerializeObject(onPlayerRemainChipsDTO);
         _ = SendToAll("OnPlayerRemainChips", onPlayerRemainChipsJson);
 
@@ -379,6 +385,6 @@ public class GameRoom
 
     public bool CheckAllPlayerReadyToResult()
     {
-        return PlayersInGame.All(p => p.IsReadyToResult == true);
+        return PlayersInGame.Values.All(p => p.IsReadyToResult == true);
     }
 }

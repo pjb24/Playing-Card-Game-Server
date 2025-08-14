@@ -85,7 +85,7 @@ public class OnUserJoinedDTO
 public class OnPlayerRemainChipsDTO
 {
     public string playerGuid { get; set; }
-    public string chips { get; set; }
+    public int chips { get; set; }
 }
 
 public class OnGameStateChangedDTO
@@ -103,7 +103,7 @@ public class OnBetPlacedDTO
 
 public class UserLeftDTO
 {
-    public string connectionId { get; set; }
+    public string playerGuid { get; set; }
 }
 
 public class OnTimeToBettingDTO
@@ -256,7 +256,7 @@ public class DoubleDownDTO
 
 public class LeaveGameDTO
 {
-    public string gameId { get; set; }
+    public string roomId { get; set; }
 }
 
 public class DealerBehaviorDoneDTO

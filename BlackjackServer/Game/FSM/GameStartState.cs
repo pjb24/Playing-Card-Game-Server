@@ -15,15 +15,15 @@ public class GameStartState : IGameState
         // playersInRoom과 playersInGame을 비교하여
         // playersInGame에 없지만 playersInRoom에는 있는 player를
         // playersInGame에 추가
-        foreach (var player in _gameRoom.PlayersInRoom)
+        foreach (var player in _gameRoom.PlayersInRoom.Values)
         {
-            if (!_gameRoom.PlayersInGame.Contains(player))
+            if (!_gameRoom.PlayersInGame.Values.Contains(player))
             {
                 _gameRoom.AddPlayerToGame(player);
             }
         }
 
-        foreach (var player in _gameRoom.PlayersInGame)
+        foreach (var player in _gameRoom.PlayersInGame.Values)
         {
             if (player.Hands.Count == 0)
             {

@@ -40,6 +40,11 @@ public class Player
         _isRoomMaster = true;
     }
 
+    public void RevokeRoomMaster()
+    {
+        _isRoomMaster = false;
+    }
+
     public void SetReadyToNextRound()
     {
         _isReadyToNextRound = true;

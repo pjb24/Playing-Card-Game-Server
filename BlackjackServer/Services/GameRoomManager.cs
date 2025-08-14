@@ -45,11 +45,19 @@ public class GameRoomManager
 
     public GameRoom? GetRoomByPlayerId(string id)
     {
-        return _gameRooms.Values.FirstOrDefault(room => room.PlayersInRoom.Any(p => p.Id == id));
+        return _gameRooms.Values.FirstOrDefault(room => room.PlayersInRoom.Values.Any(p => p.Id == id));
     }
 
     public IEnumerable<string> GetAllRoomKeys()
     {
         return _gameRooms.Keys;
+    }
+
+    public void RemoveRoom(string roomId)
+    {
+        if (_gameRooms.ContainsKey(roomId))
+        {
+            _gameRooms.Remove(roomId);
+        }
     }
 }

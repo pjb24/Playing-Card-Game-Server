@@ -18,10 +18,10 @@ public class PlaceBetCommandHandler : ICommandHandler<PlaceBetDTO>
         var user = _userManager.GetUserByConnectionId(context.ConnectionId);
         if (user == null)
         {
-            Console.WriteLine("플레이어를 찾을 수 없습니다.");
+            Console.WriteLine("유저 데이터를 찾을 수 없습니다.");
 
             OnErrorDTO onErrorDTO = new();
-            onErrorDTO.message = "플레이어를 찾을 수 없습니다.";
+            onErrorDTO.message = "유저 데이터를 찾을 수 없습니다.";
             string onErrorJson = Newtonsoft.Json.JsonConvert.SerializeObject(onErrorDTO);
             await _hubContext.Clients.Client(context.ConnectionId).SendAsync("ReceiveCommand", "OnError", onErrorJson);
             return;
@@ -88,7 +88,7 @@ public class PlaceBetCommandHandler : ICommandHandler<PlaceBetDTO>
 
             OnPlayerRemainChipsDTO onPlayerRemainChipsDTO = new();
             onPlayerRemainChipsDTO.playerGuid = player.Guid.ToString();
-            onPlayerRemainChipsDTO.chips = player.Chips.ToString();
+            onPlayerRemainChipsDTO.chips = player.Chips;
             string onPlayerRemainChipsJson = Newtonsoft.Json.JsonConvert.SerializeObject(onPlayerRemainChipsDTO);
             await _hubContext.Clients.Group(room.RoomId).SendAsync("ReceiveCommand", "OnPlayerRemainChips", onPlayerRemainChipsJson);
 

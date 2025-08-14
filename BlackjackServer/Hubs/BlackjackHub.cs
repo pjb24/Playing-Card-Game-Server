@@ -82,7 +82,7 @@ public class BlackjackHub : Hub
         _commandDispatcher.Register("Hit", new HitCommandHandler(_hubContext, _userManager, _gameRoomManager));
         _commandDispatcher.Register("JoinLobby", new JoinLobbyCommandHandler(_hubContext, _userManager, _gameRoomManager));
         _commandDispatcher.Register("JoinRoom", new JoinRoomCommandHandler(_hubContext, _userManager, _gameRoomManager));
-        _commandDispatcher.Register("LeaveGame", new LeaveGameCommandHandler(_hubContext));
+        _commandDispatcher.Register("LeaveGame", new LeaveGameCommandHandler(_hubContext, _userManager, _gameRoomManager));
         _commandDispatcher.Register("PlaceBet", new PlaceBetCommandHandler(_hubContext, _userManager, _gameRoomManager));
         _commandDispatcher.Register("ReadyToNextRound", new ReadyToNextRoundCommandHandler(_hubContext, _userManager, _gameRoomManager));
         _commandDispatcher.Register("RequestFullRoomList", new RequestFullRoomListCommandHandler(_hubContext, _gameRoomManager));
