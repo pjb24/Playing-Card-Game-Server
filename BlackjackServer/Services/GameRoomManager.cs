@@ -47,4 +47,9 @@ public class GameRoomManager
     {
         return _gameRooms.Values.FirstOrDefault(room => room.PlayersInRoom.Any(p => p.Id == id));
     }
+
+    public IEnumerable<string> GetAllRoomKeys()
+    {
+        return _gameRooms.Keys;
+    }
 }

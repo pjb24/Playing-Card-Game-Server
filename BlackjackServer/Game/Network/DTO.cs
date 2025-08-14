@@ -50,7 +50,8 @@ public class OnFullExistRoomListDTO
 
 public class OnChangedRoomListDTO
 {
-    public List<RoomInfoDTO> rooms { get; set; }
+    public List<RoomInfoDTO> roomsRemove { get; set; }
+    public List<RoomInfoDTO> roomsAdd { get; set; }
 }
 
 public class OnRoomCreateSuccessDTO
@@ -205,6 +206,16 @@ public class JoinLobbyDTO
 public class CreateNewRoomDTO
 {
     public string roomName { get; set; }
+}
+
+public class RequestFullRoomListDTO
+{
+
+}
+
+public class RequestRoomChangesDTO
+{
+    public List<RoomInfoDTO> roomList {get;set;}
 }
 
 public class JoinRoomDTO

@@ -226,7 +226,7 @@ public class GameRoom
 
         if (!hand.CanSplit())
         {
-            return false;
+            //return false;
         }
 
         if (player.Chips < hand.BetAmount)
