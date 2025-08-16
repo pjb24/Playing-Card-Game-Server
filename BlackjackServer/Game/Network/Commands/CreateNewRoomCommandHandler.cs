@@ -38,9 +38,6 @@ public class CreateNewRoomCommandHandler : ICommandHandler<CreateNewRoomDTO>
         bool created = _gameRoomManager.CreateRoom(command.roomName, _hubContext, _userManager);
         if (created)
         {
-            _gameRoomManager.AddPlayerToRoom(command.roomName, player);
-            await _hubContext.Groups.AddToGroupAsync(context.ConnectionId, command.roomName);
-
             OnRoomCreateSuccessDTO onRoomCreateSuccessDTO = new();
             onRoomCreateSuccessDTO.roomName = command.roomName;
             string onRoomCreateSuccessJson = Newtonsoft.Json.JsonConvert.SerializeObject(onRoomCreateSuccessDTO);

@@ -35,6 +35,7 @@ public class JoinRoomCommandHandler : ICommandHandler<JoinRoomDTO>
             return;
         }
 
+        // 플레이어를 게임 방에 추가
         _gameRoomManager.AddPlayerToRoom(command.roomName, player);
         await _hubContext.Groups.AddToGroupAsync(context.ConnectionId, command.roomName);
 
@@ -48,6 +49,7 @@ public class JoinRoomCommandHandler : ICommandHandler<JoinRoomDTO>
             return;
         }
 
+        // 방에 있는 플레이어 목록을 클라이언트에 전송
         OnExistingPlayerListDTO onExistingPlayerListDTO = new();
         List<PlayerInfoDTO> listPlayerInfo = new();
         foreach (var item in room.PlayersInRoom.Values)
@@ -66,11 +68,39 @@ public class JoinRoomCommandHandler : ICommandHandler<JoinRoomDTO>
         string onExistingPlayerListJson = Newtonsoft.Json.JsonConvert.SerializeObject(onExistingPlayerListDTO);
         await _hubContext.Clients.Client(context.ConnectionId).SendAsync("ReceiveCommand", "OnExistingPlayerList", onExistingPlayerListJson);
 
+        foreach (var item in room.PlayersInRoom.Values)
+        {
+            if (item.Id == player.Id)
+            {
+                continue;
+            }
+
+            PlayerHand itemHand = new();
+            item.AddHand(itemHand);
+
+            OnAddHandToPlayerDTO onAddHandToPlayerDTOItem = new();
+            onAddHandToPlayerDTOItem.playerGuid = item.Guid.ToString();
+            onAddHandToPlayerDTOItem.handId = itemHand.HandId.ToString();
+            string onAddHandToPlayerJsonItem = Newtonsoft.Json.JsonConvert.SerializeObject(onAddHandToPlayerDTOItem);
+            _ = room.SendToAll("OnAddHandToPlayer", onAddHandToPlayerJsonItem);
+        }
+
+        // 플레이어가 방에 성공적으로 들어갔음을 알리는 메시지를 클라이언트에 전송
         OnJoinSuccessDTO onJoinSuccessDTO = new();
         onJoinSuccessDTO.userName = user.Name;
         onJoinSuccessDTO.playerGuid = player.Guid.ToString();
         string onJoinSuccessJson = Newtonsoft.Json.JsonConvert.SerializeObject(onJoinSuccessDTO);
         await _hubContext.Clients.Client(context.ConnectionId).SendAsync("ReceiveCommand", "OnJoinSuccess", onJoinSuccessJson);
+
+        // 플레이어가 방에 들어갈 때 핸드를 추가하고, 관련 정보를 클라이언트에 전송
+        PlayerHand hand = new();
+        player.AddHand(hand);
+
+        OnAddHandToPlayerDTO onAddHandToPlayerDTO = new();
+        onAddHandToPlayerDTO.playerGuid = player.Guid.ToString();
+        onAddHandToPlayerDTO.handId = hand.HandId.ToString();
+        string onAddHandToPlayerJson = Newtonsoft.Json.JsonConvert.SerializeObject(onAddHandToPlayerDTO);
+        _ = room.SendToAll("OnAddHandToPlayer", onAddHandToPlayerJson);
 
         if (player.IsRoomMaster)
         {

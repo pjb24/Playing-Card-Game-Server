@@ -23,21 +23,6 @@ public class GameStartState : IGameState
             }
         }
 
-        foreach (var player in _gameRoom.PlayersInGame.Values)
-        {
-            if (player.Hands.Count == 0)
-            {
-                PlayerHand hand = new();
-                player.AddHand(hand);
-
-                OnAddHandToPlayerDTO onAddHandToPlayerDTO = new();
-                onAddHandToPlayerDTO.playerGuid = player.Guid.ToString();
-                onAddHandToPlayerDTO.handId = hand.HandId.ToString();
-                string onAddHandToPlayerJson = Newtonsoft.Json.JsonConvert.SerializeObject(onAddHandToPlayerDTO);
-                _ = _gameRoom.SendToAll("OnAddHandToPlayer", onAddHandToPlayerJson);
-            }
-        }
-
         _gameRoom.Deck.PrepareNextRound();
 
         _gameRoom.ChangeState(new BettingState(_gameRoom));

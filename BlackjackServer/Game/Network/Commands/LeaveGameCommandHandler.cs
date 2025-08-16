@@ -52,7 +52,12 @@ public class LeaveGameCommandHandler : ICommandHandler<LeaveGameDTO>
         }
 
         await _hubContext.Groups.RemoveFromGroupAsync(context.ConnectionId, command.roomId);
+
         player.RevokeRoomMaster();
+        
+        player.ClearHand();
+        player.SetAllHandDoneReset();
+        player.ResetPlayerReadyToResult();
         _gameRoomManager.RemovePlayerFromRoom(command.roomId, player);
 
         if (room.PlayersInRoom.Count == 0)
