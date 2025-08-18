@@ -71,20 +71,20 @@ public class ReadyToNextRoundCommandHandler : ICommandHandler<ReadyToNextRoundDT
             OnGrantRoomMasterDTO onGrantRoomMasterDTO = new();
             string onGrantRoomMasterJson = Newtonsoft.Json.JsonConvert.SerializeObject(onGrantRoomMasterDTO);
             await _hubContext.Clients.Client(targetConnection.ConnectionId).SendAsync("ReceiveCommand", "OnGrantRoomMaster", onGrantRoomMasterJson);
-        }
 
-        foreach (var item in room.PlayersInRoom.Values)
-        {
-            if (item.Hands.Count == 0)
+            foreach (var item in room.PlayersInRoom.Values)
             {
-                PlayerHand hand = new();
-                item.AddHand(hand);
+                if (item.Hands.Count == 0)
+                {
+                    PlayerHand hand = new();
+                    item.AddHand(hand);
 
-                OnAddHandToPlayerDTO onAddHandToPlayerDTO = new();
-                onAddHandToPlayerDTO.playerGuid = item.Guid.ToString();
-                onAddHandToPlayerDTO.handId = hand.HandId.ToString();
-                string onAddHandToPlayerJson = Newtonsoft.Json.JsonConvert.SerializeObject(onAddHandToPlayerDTO);
-                _ = room.SendToAll("OnAddHandToPlayer", onAddHandToPlayerJson);
+                    OnAddHandToPlayerDTO onAddHandToPlayerDTO = new();
+                    onAddHandToPlayerDTO.playerGuid = item.Guid.ToString();
+                    onAddHandToPlayerDTO.handId = hand.HandId.ToString();
+                    string onAddHandToPlayerJson = Newtonsoft.Json.JsonConvert.SerializeObject(onAddHandToPlayerDTO);
+                    _ = room.SendToAll("OnAddHandToPlayer", onAddHandToPlayerJson);
+                }
             }
         }
     }

@@ -1,6 +1,7 @@
 public class Hand
 {
     protected List<Card> _cards;
+    public IReadOnlyList<Card> Cards => _cards.AsReadOnly();
 
     public Hand()
     {
@@ -49,11 +50,6 @@ public class Hand
         }
 
         return total;
-    }
-
-    public IEnumerable<Card> GetCards()
-    {
-        return _cards.AsReadOnly();
     }
 
     public bool IsBust()

@@ -6,9 +6,9 @@ public class GameRoom
     private readonly IHubContext<BlackjackHub> _hubContext;
 
     public string RoomId { get; }
-    private ConcurrentDictionary<string, Player> _playersInRoom = new();
+    private CustomOrderedDictionary<string, Player> _playersInRoom = new();
     public IReadOnlyDictionary<string, Player> PlayersInRoom => _playersInRoom.AsReadOnly();
-    private ConcurrentDictionary<string, Player> _playersInGame = new();
+    private CustomOrderedDictionary<string, Player> _playersInGame = new();
     public IReadOnlyDictionary<string, Player> PlayersInGame => _playersInGame.AsReadOnly();
     private Dealer _dealer = new();
     public Dealer Dealer => _dealer;
@@ -64,6 +64,37 @@ public class GameRoom
         }
     }
 
+    public async Task SendToAllExcept(string methodName, string json, string excludedConnectionId)
+    {
+        try
+        {
+            await _hubContext.Clients.GroupExcept(RoomId, excludedConnectionId).SendAsync("ReceiveCommand", methodName, json);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error sending message to all players in room {RoomId} except {excludedConnectionId}: {ex.Message}");
+        }
+    }
+
+    public async Task SendToAllExceptPlayer(string methodName, string json, Player player)
+    {
+        try
+        {
+            var user = _userManager.GetUserByPlayerId(player.Id);
+            if (user == null)
+            {
+                Console.WriteLine($"User with ID {player.Id} not found.");
+                return;
+            }
+
+            await _hubContext.Clients.GroupExcept(RoomId, user.ConnectionId).SendAsync("ReceiveCommand", methodName, json);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error sending message to all players in room {RoomId} except {player.Id}: {ex.Message}");
+        }
+    }
+
     public void AddPlayerToRoom(Player player)
     {
         if (!_playersInRoom.ContainsKey(player.Id))
@@ -76,12 +107,12 @@ public class GameRoom
     {
         if (_playersInRoom.ContainsKey(player.Id))
         {
-            _playersInRoom.TryRemove(player.Id, out _);
+            _playersInRoom.Remove(player.Id, out _);
         }
 
         if (_playersInGame.ContainsKey(player.Id))
         {
-            _playersInGame.TryRemove(player.Id, out _);
+            _playersInGame.Remove(player.Id, out _);
         }
     }
 
@@ -97,7 +128,7 @@ public class GameRoom
     {
         if (_playersInGame.ContainsKey(player.Id))
         {
-            _playersInGame.TryRemove(player.Id, out _);
+            _playersInGame.Remove(player.Id, out _);
         }
     }
 
@@ -270,7 +301,7 @@ public class GameRoom
         _ = SendToAll("OnPlayerRemainChips", onPlayerRemainChipsJson);
 
         // 현재 핸드의 2번째 카드를 새로운 핸드로 나눔
-        var Cards = hand.GetCards();
+        var Cards = hand.Cards;
         var splitCard = Cards.ElementAt(1);
         hand.RemoveCard(splitCard);
         newHand.AddCard(splitCard);
@@ -370,6 +401,8 @@ public class GameRoom
         }
         else
         {
+            _dealer.SetHoleCardRevealed();
+
             OnDealerHoleCardRevealedDTO onDealerHoleCardRevealedDTO = new();
             onDealerHoleCardRevealedDTO.cardRank = dealerHiddenCard.GetRank();
             onDealerHoleCardRevealedDTO.cardSuit = dealerHiddenCard.GetSuit();

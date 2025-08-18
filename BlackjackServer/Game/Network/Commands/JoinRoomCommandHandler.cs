@@ -66,8 +66,9 @@ public class JoinRoomCommandHandler : ICommandHandler<JoinRoomDTO>
         }
         onExistingPlayerListDTO.players = listPlayerInfo;
         string onExistingPlayerListJson = Newtonsoft.Json.JsonConvert.SerializeObject(onExistingPlayerListDTO);
-        await _hubContext.Clients.Client(context.ConnectionId).SendAsync("ReceiveCommand", "OnExistingPlayerList", onExistingPlayerListJson);
+        _ = room.SendToPlayer(player, "OnExistingPlayerList", onExistingPlayerListJson);
 
+        // 방에 있는 플레이어의 핸드들을 클라이언트에 전송
         foreach (var item in room.PlayersInRoom.Values)
         {
             if (item.Id == player.Id)
@@ -75,14 +76,43 @@ public class JoinRoomCommandHandler : ICommandHandler<JoinRoomDTO>
                 continue;
             }
 
-            PlayerHand itemHand = new();
-            item.AddHand(itemHand);
+            foreach (var itemHand in item.Hands)
+            {
+                OnAddHandToPlayerDTO onAddHandToPlayerDTOItem = new();
+                onAddHandToPlayerDTOItem.playerGuid = item.Guid.ToString();
+                onAddHandToPlayerDTOItem.handId = itemHand.HandId.ToString();
+                string onAddHandToPlayerJsonItem = Newtonsoft.Json.JsonConvert.SerializeObject(onAddHandToPlayerDTOItem);
+                _ = room.SendToPlayer(player, "OnAddHandToPlayer", onAddHandToPlayerJsonItem);
 
-            OnAddHandToPlayerDTO onAddHandToPlayerDTOItem = new();
-            onAddHandToPlayerDTOItem.playerGuid = item.Guid.ToString();
-            onAddHandToPlayerDTOItem.handId = itemHand.HandId.ToString();
-            string onAddHandToPlayerJsonItem = Newtonsoft.Json.JsonConvert.SerializeObject(onAddHandToPlayerDTOItem);
-            _ = room.SendToAll("OnAddHandToPlayer", onAddHandToPlayerJsonItem);
+                foreach (var card in itemHand.Cards)
+                {
+                    OnAddCardToHandDTO onAddCardToHandDTO = new();
+                    onAddCardToHandDTO.playerGuid = item.Guid.ToString();
+                    onAddCardToHandDTO.handId = itemHand.HandId.ToString();
+                    onAddCardToHandDTO.cardRank = card.GetRank();
+                    onAddCardToHandDTO.cardSuit = card.GetSuit();
+                    string onAddCardToHandJson = Newtonsoft.Json.JsonConvert.SerializeObject(onAddCardToHandDTO);
+                    _ = room.SendToPlayer(player, "OnAddCardToHand", onAddCardToHandJson);
+                }
+            }
+
+            int index = 0;
+            foreach (var card in room.Dealer.Hand.Cards)
+            {
+                OnAddCardToDealerHandDTO onAddCardToDealerHandDTO = new();
+                onAddCardToDealerHandDTO.cardRank = card.GetRank();
+                onAddCardToDealerHandDTO.cardSuit = card.GetSuit();
+
+                if (index == 1 && !room.Dealer.IsHoleCardRevealed)
+                {
+                    onAddCardToDealerHandDTO.cardRank = E_CardRank.Back;
+                    onAddCardToDealerHandDTO.cardSuit = E_CardSuit.Back;
+                }
+                string onAddCardToDealerHandJson = Newtonsoft.Json.JsonConvert.SerializeObject(onAddCardToDealerHandDTO);
+                _ = room.SendToPlayer(player, "OnAddCardToDealerHand", onAddCardToDealerHandJson);
+
+                index++;
+            }
         }
 
         // 플레이어가 방에 성공적으로 들어갔음을 알리는 메시지를 클라이언트에 전송
@@ -90,9 +120,16 @@ public class JoinRoomCommandHandler : ICommandHandler<JoinRoomDTO>
         onJoinSuccessDTO.userName = user.Name;
         onJoinSuccessDTO.playerGuid = player.Guid.ToString();
         string onJoinSuccessJson = Newtonsoft.Json.JsonConvert.SerializeObject(onJoinSuccessDTO);
-        await _hubContext.Clients.Client(context.ConnectionId).SendAsync("ReceiveCommand", "OnJoinSuccess", onJoinSuccessJson);
+        _ = room.SendToPlayer(player, "OnJoinSuccess", onJoinSuccessJson);
 
-        // 플레이어가 방에 들어갈 때 핸드를 추가하고, 관련 정보를 클라이언트에 전송
+        // 방에 있는 플레이어에게 새로운 플레이어가 들어왔음을 알림
+        OnUserJoinedDTO onUserJoinedDTO = new();
+        onUserJoinedDTO.userName = user.Name;
+        onUserJoinedDTO.playerGuid = player.Guid.ToString();
+        string onUserJoinedJson = Newtonsoft.Json.JsonConvert.SerializeObject(onUserJoinedDTO);
+        _ = room.SendToAllExceptPlayer("OnUserJoined", onUserJoinedJson, player);
+
+        // 플레이어가 방에 들어갈 때 핸드를 추가하고, 관련 정보를 모든 클라이언트에 전송
         PlayerHand hand = new();
         player.AddHand(hand);
 
@@ -106,20 +143,14 @@ public class JoinRoomCommandHandler : ICommandHandler<JoinRoomDTO>
         {
             OnGrantRoomMasterDTO onGrantRoomMasterDTO = new();
             string onGrantRoomMasterJson = Newtonsoft.Json.JsonConvert.SerializeObject(onGrantRoomMasterDTO);
-            await _hubContext.Clients.Client(context.ConnectionId).SendAsync("ReceiveCommand", "OnGrantRoomMaster", onGrantRoomMasterJson);
+            _ = room.SendToPlayer(player, "OnGrantRoomMaster", onGrantRoomMasterJson);
         }
-
-        OnUserJoinedDTO onUserJoinedDTO = new();
-        onUserJoinedDTO.userName = user.Name;
-        onUserJoinedDTO.playerGuid = player.Guid.ToString();
-        string onUserJoinedJson = Newtonsoft.Json.JsonConvert.SerializeObject(onUserJoinedDTO);
-        await _hubContext.Clients.AllExcept(context.ConnectionId).SendAsync("ReceiveCommand", "OnUserJoined", onUserJoinedJson);
 
         OnPlayerRemainChipsDTO onPlayerRemainChipsDTO = new();
         onPlayerRemainChipsDTO.playerGuid = player.Guid.ToString();
         onPlayerRemainChipsDTO.chips = player.Chips;
         string onPlayerRemainChipsJson = Newtonsoft.Json.JsonConvert.SerializeObject(onPlayerRemainChipsDTO);
-        await _hubContext.Clients.Group(room.RoomId).SendAsync("ReceiveCommand", "OnPlayerRemainChips", onPlayerRemainChipsJson);
+        _ = room.SendToAll("OnPlayerRemainChips", onPlayerRemainChipsJson);
 
         foreach (var item in room.PlayersInRoom.Values)
         {
@@ -132,7 +163,7 @@ public class JoinRoomCommandHandler : ICommandHandler<JoinRoomDTO>
             onPlayerRemainChipsDTOOther.playerGuid = item.Guid.ToString();
             onPlayerRemainChipsDTOOther.chips = item.Chips;
             string onPlayerRemainChipsJsonOther = Newtonsoft.Json.JsonConvert.SerializeObject(onPlayerRemainChipsDTOOther);
-            await _hubContext.Clients.Group(room.RoomId).SendAsync("ReceiveCommand", "OnPlayerRemainChips", onPlayerRemainChipsJsonOther);
+            _ = room.SendToPlayer(player, "OnPlayerRemainChips", onPlayerRemainChipsJsonOther);
         }
 
         Console.WriteLine($"{user.Name} joined with connection ID: {context.ConnectionId}");

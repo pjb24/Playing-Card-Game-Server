@@ -34,8 +34,14 @@ public class Deck
         List<Card> deck = new List<Card>();
         foreach (E_CardSuit suit in Enum.GetValues(typeof(E_CardSuit)))
         {
+            if (suit == E_CardSuit.Back)
+                continue; // Back suit은 제외
+
             foreach (E_CardRank rank in Enum.GetValues(typeof(E_CardRank)))
             {
+                if (rank == E_CardRank.Back)
+                    continue; // Back rank은 제외
+                    
                 deck.Add(new Card(suit, rank));
             }
         }

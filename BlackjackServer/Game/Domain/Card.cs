@@ -4,10 +4,12 @@ public enum E_CardSuit
     Hearts,
     Diamonds,
     Clovers,
+    Back,
 }
 
 public enum E_CardRank
 {
+    Back = 0,
     Ace = 1,
     Two = 2,
     Three = 3,
